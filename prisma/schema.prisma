@@ -1,0 +1,414 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  SUPER_ADMIN
+  ORGANIZER
+  PARTICIPANT
+  JUDGE
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING
+}
+
+enum EventStatus {
+  DRAFT
+  PENDING_APPROVAL
+  PUBLISHED
+  REJECTED
+}
+
+enum TeamRole {
+  LEADER
+  MEMBER
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  EVALUATED
+}
+
+enum CertificateType {
+  PARTICIPATION
+  WINNER
+  RUNNER_UP
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id            String         @id @default(uuid())
+  name          String?
+  email         String         @unique
+  emailVerified DateTime?
+  password      String?        // Nullable for OAuth logins
+  image         String?
+  role          Role           @default(PARTICIPANT)
+  status        UserStatus     @default(ACTIVE)
+  version       Int            @default(0) // Optimistic locking
+  deletedAt     DateTime?      // Soft delete
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  // Auth Relations
+  accounts      Account[]
+  sessions      Session[]
+  refreshTokens RefreshToken[]
+
+  // Business Relations
+  profile       Profile?
+  registrations Registration[]
+  teamMembers   TeamMember[]
+  judges        Judge[]
+  auditLogs     AuditLog[]
+  transactions  Transaction[]
+  notifications Notification[]
+  certificates  Certificate[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+model RolePermission {
+  role       Role
+  permission String
+
+  @@id([role, permission])
+}
+
+model Profile {
+  id           String    @id @default(uuid())
+  userId       String    @unique
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skills       String[]  @default([])
+  experience   String?   // e.g. "0-2 years", "3-5 years"
+  resumeUrl    String?
+  githubUrl    String?
+  linkedInUrl  String?
+  portfolioUrl String?
+  bio          String?
+  college      String?
+  country      String?
+  avatarUrl    String?
+  badges       String[]  @default([])
+  version      Int       @default(0) // Optimistic locking
+  updatedAt    DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Event {
+  id                String         @id @default(uuid())
+  title             String
+  slug              String         @unique
+  description       String         @db.Text
+  bannerUrl         String?
+  status            EventStatus    @default(DRAFT)
+  registrationStart DateTime
+  registrationEnd   DateTime
+  eventStart        DateTime
+  eventEnd          DateTime
+  organizerId       String
+  rules             String?        @db.Text
+  faq               Json?          // FAQ Structure: { q: string, a: string }[]
+  prizes            Json?          // Prizes structure: { rank: number, title: string, reward: string }[]
+  sponsors          Json?          // Sponsors structure: { name: string, logo: string, tier: string }[]
+  schedule          Json?          // Schedule structure: { time: string, title: string }[]
+  timeline          Json?          // Timeline structure: { date: string, label: string }[]
+  customQuestions   Json?          // Custom registration form questions: { id: string, type: string, label: string, required: boolean, options?: string[] }[]
+  version           Int            @default(0) // Optimistic locking
+  deletedAt         DateTime?      // Soft delete
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  registrations     Registration[]
+  teams             Team[]
+  judges            Judge[]
+  announcements     Announcement[]
+  certificates      Certificate[]
+
+  @@index([slug])
+  @@index([organizerId])
+}
+
+model Registration {
+  id        String    @id @default(uuid())
+  userId    String
+  eventId   String
+  teamId    String?
+  status    String    @default("APPROVED") // e.g. "APPROVED", "PENDING"
+  answers   Json?     // Custom form responses: { questionId: string, answer: string }[]
+  version   Int       @default(0) // Optimistic locking
+  deletedAt DateTime? // Soft delete
+  createdAt DateTime  @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  team  Team? @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, eventId])
+  @@index([userId])
+  @@index([eventId])
+}
+
+model Team {
+  id              String       @id @default(uuid())
+  name            String
+  eventId         String
+  event           Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  leaderId        String
+  inviteToken     String       @unique
+  inviteExpiresAt DateTime
+  version         Int          @default(0) // Optimistic locking
+  deletedAt       DateTime?    // Soft delete
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  members        TeamMember[]
+  registrations  Registration[]
+  submissions    Submission[]
+
+  @@index([eventId])
+  @@index([inviteToken])
+}
+
+model TeamMember {
+  id        String           @id @default(uuid())
+  teamId    String
+  team      Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      TeamRole         @default(MEMBER)
+  status    InvitationStatus @default(PENDING)
+  joinedAt  DateTime?
+
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+}
+
+model Submission {
+  id          String           @id @default(uuid())
+  teamId      String
+  team        Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  eventId     String
+  title       String
+  description String           @db.Text
+  projectUrl  String?
+  repoUrl     String?
+  videoUrl    String?
+  status      SubmissionStatus @default(SUBMITTED)
+  version     Int              @default(0) // Optimistic locking
+  deletedAt   DateTime?        // Soft delete
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  evaluations Evaluation[]
+
+  @@index([teamId])
+  @@index([eventId])
+}
+
+model Judge {
+  id        String   @id @default(uuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  evaluations Evaluation[]
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@index([userId])
+}
+
+model Evaluation {
+  id           String      @id @default(uuid())
+  submissionId String
+  submission   Submission  @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  judgeId      String
+  judge        Judge       @relation(fields: [judgeId], references: [id], onDelete: Cascade)
+  feedback     String?     @db.Text
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  scores       Score[]
+
+  @@unique([submissionId, judgeId])
+  @@index([submissionId])
+  @@index([judgeId])
+}
+
+model Score {
+  id           String     @id @default(uuid())
+  evaluationId String
+  evaluation   Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  criteriaName String     // e.g. "Innovation", "Code Quality"
+  points       Int
+  maxPoints    Int
+
+  @@index([evaluationId])
+}
+
+model Announcement {
+  id             String   @id @default(uuid())
+  eventId        String
+  event          Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  title          String
+  content        String   @db.Text
+  targetAudience String   @default("ALL") // "ALL", "TEAMS", "JUDGES"
+  createdAt      DateTime @default(now())
+
+  @@index([eventId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  type      String   @default("SYSTEM") // "SYSTEM", "EVENT", "TEAM"
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Certificate {
+  id           String          @id @default(uuid())
+  userId       String
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventId      String
+  event        Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  type         CertificateType @default(PARTICIPATION)
+  credentialId String          @unique
+  issuedAt     DateTime        @default(now())
+  pdfUrl       String
+
+  @@index([userId])
+  @@index([eventId])
+  @@index([credentialId])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  details   Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model PlatformSettings {
+  id                     String   @id @default("single-settings-row")
+  platformFeePercentage  Decimal  @default(0.00) @db.Decimal(5, 2)
+  maintenanceMode        Boolean  @default(false)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model Transaction {
+  id          String            @id @default(uuid())
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount      Decimal           @db.Decimal(10, 2)
+  currency    String            @default("USD")
+  status      TransactionStatus @default(PENDING)
+  provider    String            // "STRIPE", "PAYPAL"
+  referenceId String            @unique
+  createdAt   DateTime          @default(now())
+  payments    Payment[]
+
+  @@index([userId])
+}
+
+model Payment {
+  id            String            @id @default(uuid())
+  transactionId String
+  transaction   Transaction       @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  amount        Decimal           @db.Decimal(10, 2)
+  status        TransactionStatus @default(PENDING)
+  paymentMethod String            // e.g. "card", "paypal"
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([transactionId])
+}
