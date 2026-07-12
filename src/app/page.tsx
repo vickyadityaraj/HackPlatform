@@ -28,8 +28,8 @@ export default async function Home() {
             <Link href="/matchmaking" className="hover:text-slate-200 transition-colors">
               Matchmaking Hub
             </Link>
-            <Link href="/events/global-hackathon-2026" className="hover:text-slate-200 transition-colors">
-              Featured Event
+            <Link href="/events" className="hover:text-slate-200 transition-colors">
+              Explore Events
             </Link>
           </nav>
 

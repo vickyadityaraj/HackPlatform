@@ -102,6 +102,7 @@ export default async function EventPage({ params }: EventPageProps) {
             <TabsTrigger value="overview" className="flex-1 py-2 text-xs font-semibold rounded-md text-neutral-400 data-[state=active]:bg-neutral-850 data-[state=active]:text-neutral-100">Overview</TabsTrigger>
             <TabsTrigger value="rules" className="flex-1 py-2 text-xs font-semibold rounded-md text-neutral-400 data-[state=active]:bg-neutral-850 data-[state=active]:text-neutral-100">Rules</TabsTrigger>
             <TabsTrigger value="schedule" className="flex-1 py-2 text-xs font-semibold rounded-md text-neutral-400 data-[state=active]:bg-neutral-850 data-[state=active]:text-neutral-100">Schedule</TabsTrigger>
+            <TabsTrigger value="faq" className="flex-1 py-2 text-xs font-semibold rounded-md text-neutral-400 data-[state=active]:bg-neutral-850 data-[state=active]:text-neutral-100">FAQ</TabsTrigger>
             <TabsTrigger value="leaderboard" className="flex-1 py-2 text-xs font-semibold rounded-md text-neutral-400 data-[state=active]:bg-neutral-850 data-[state=active]:text-neutral-100">Leaderboard</TabsTrigger>
             <TabsTrigger value="announcements" className="flex-1 py-2 text-xs font-semibold rounded-md text-neutral-400 data-[state=active]:bg-neutral-850 data-[state=active]:text-neutral-100">Announcements</TabsTrigger>
           </TabsList>
@@ -185,6 +186,27 @@ export default async function EventPage({ params }: EventPageProps) {
                     </CardContent>
                   </Card>
                 )}
+
+                {sponsors.length > 0 && (
+                  <Card className="bg-neutral-900 border-neutral-800 text-neutral-100">
+                    <CardContent className="py-6 space-y-4">
+                      <h3 className="text-lg font-bold flex items-center gap-2">
+                        <Users className="w-5 h-5 text-indigo-400" />
+                        Sponsors
+                      </h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        {sponsors.map((sp: any, idx: number) => (
+                          <div key={idx} className="p-3 bg-neutral-950 border border-neutral-850/60 rounded-lg flex flex-col items-center justify-center text-center gap-2">
+                            <span className="text-xs font-bold text-neutral-200">{sp.name}</span>
+                            <Badge variant="outline" className="text-[9px] uppercase font-semibold text-neutral-500 border-neutral-850">
+                              {sp.tier}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </div>
           </TabsContent>
@@ -197,6 +219,32 @@ export default async function EventPage({ params }: EventPageProps) {
                 <p className="text-sm text-neutral-400 leading-relaxed whitespace-pre-wrap">
                   {event.rules || "Standard hackathon rules apply. Be respectful, build original projects, and submit before deadlines."}
                 </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* FAQ Tab Content */}
+          <TabsContent value="faq">
+            <Card className="bg-neutral-900 border-neutral-800 text-neutral-100">
+              <CardContent className="py-6 space-y-4">
+                <h3 className="text-lg font-bold">Frequently Asked Questions</h3>
+                {faq.length === 0 ? (
+                  <p className="text-sm text-neutral-500">No questions configured yet.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {faq.map((item: any, i: number) => (
+                      <div key={i} className="p-4 rounded-lg bg-neutral-950 border border-neutral-850/60 space-y-2">
+                        <h4 className="font-bold text-neutral-200 text-sm flex items-start gap-2">
+                          <span className="text-violet-400 font-extrabold">Q.</span>
+                          {item.q}
+                        </h4>
+                        <p className="text-xs text-neutral-400 leading-relaxed pl-5 whitespace-pre-wrap">
+                          {item.a}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

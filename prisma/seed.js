@@ -122,6 +122,54 @@ async function main() {
   });
   console.log("Created Participant Profile:", partProfile.userId);
 
+  // 7. Create Featured Event (global-hackathon-2026)
+  const featuredEventSlug = "global-hackathon-2026";
+  const featuredEvent = await prisma.event.upsert({
+    where: { slug: featuredEventSlug },
+    update: {},
+    create: {
+      title: "Global Hackathon 2026",
+      slug: featuredEventSlug,
+      description: "Join developers worldwide to build state-of-the-art AI applications, premium developer tools, and scalable web apps. Compete for major cash rewards and goodies, connect with elite mentors, and showcase your skills to top-tier global sponsors.",
+      status: "PUBLISHED",
+      registrationStart: new Date("2026-01-01T00:00:00Z"),
+      registrationEnd: new Date("2026-12-31T23:59:59Z"),
+      eventStart: new Date("2026-08-01T09:00:00Z"),
+      eventEnd: new Date("2026-08-05T18:00:00Z"),
+      organizerId: orgUser.id,
+      rules: "1. Respect all code of conduct rules.\n2. Projects must be built entirely during the event.\n3. Team sizes must be between 1 and 4 members.",
+      faq: [
+        { q: "Who can participate?", a: "Anyone interested in software development, design, or product creation!" },
+        { q: "What is the maximum team size?", a: "You can compete individually or in teams of up to 4 members." }
+      ],
+      prizes: [
+        { rank: 1, title: "Grand Champion", reward: "$10,000 USD" },
+        { rank: 2, title: "Runner Up", reward: "$5,000 USD" },
+        { rank: 3, title: "Third Place", reward: "$2,500 USD" }
+      ],
+      sponsors: [
+        { name: "Google Cloud", logo: "/images/google.png", tier: "Gold" },
+        { name: "Vercel", logo: "/images/vercel.png", tier: "Silver" }
+      ],
+      schedule: [
+        { time: "Day 1, 09:00 AM", title: "Opening Ceremony & Team Matchmaking" },
+        { time: "Day 2, 02:00 PM", title: "Mid-way Progress Check-in" },
+        { time: "Day 4, 12:00 PM", title: "Project Submission Deadline" }
+      ],
+      timeline: [
+        { date: "Aug 1, 2026", label: "Kickoff Ceremony" },
+        { date: "Aug 4, 2026", label: "Submission Review" },
+        { date: "Aug 5, 2026", label: "Winners Announcement" }
+      ],
+      customQuestions: [
+        { id: "tshirt", type: "select", label: "T-Shirt Size", required: true, options: ["XS", "S", "M", "L", "XL", "XXL"] },
+        { id: "github", type: "text", label: "GitHub Profile link", required: true },
+        { id: "dietary", type: "text", label: "Dietary Restrictions (optional)", required: false }
+      ]
+    }
+  });
+  console.log("Created Featured Event:", featuredEvent.title);
+
   console.log("Database seeding completed successfully! 🚀");
 }
 

@@ -312,3 +312,44 @@ export async function getParticipantTeams() {
     orderBy: { joinedAt: "desc" },
   });
 }
+
+export async function getTeamByInviteToken(inviteToken: string) {
+  // Checks authentication first
+  await requireAuth();
+
+  const team = await prisma.team.findUnique({
+    where: { inviteToken, deletedAt: null },
+    include: {
+      event: {
+        select: { title: true },
+      },
+      members: {
+        include: {
+          user: {
+            select: { name: true, email: true },
+          },
+        },
+      },
+    },
+  });
+
+  if (!team) {
+    throw new Error("Invalid or expired invite token");
+  }
+
+  if (new Date() > team.inviteExpiresAt) {
+    throw new Error("This invite token has expired");
+  }
+
+  // Find leader's name
+  const leaderMember = team.members.find((m) => m.userId === team.leaderId);
+  const leaderName = leaderMember?.user.name || leaderMember?.user.email || "Unknown Leader";
+
+  return {
+    id: team.id,
+    name: team.name,
+    eventTitle: team.event.title,
+    leaderName,
+    memberCount: team.members.length,
+  };
+}

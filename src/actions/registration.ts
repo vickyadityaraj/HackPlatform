@@ -69,3 +69,20 @@ export async function checkUserRegistration(eventId: string) {
     },
   });
 }
+
+export async function getParticipantRegistrations() {
+  const user = await requireAuth();
+
+  return await prisma.registration.findMany({
+    where: { userId: user.id, deletedAt: null },
+    include: {
+      event: {
+        select: { id: true, title: true, slug: true },
+      },
+      team: {
+        select: { id: true, name: true },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
