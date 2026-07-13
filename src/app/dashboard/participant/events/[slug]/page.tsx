@@ -38,10 +38,10 @@ export default async function EventPage({ params }: EventPageProps) {
   const inTeam = !!registration?.teamId;
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans">
+    <div className="space-y-8 font-sans">
       {/* Event Hero */}
-      <div className="relative border-b border-neutral-800 bg-neutral-900/40 p-8 md:p-16">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      <div className="relative border border-neutral-850 rounded-2xl bg-neutral-900/40 p-8 md:p-12 overflow-hidden shadow-lg">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
           <div className="space-y-4">
             <div className="flex items-center gap-2 flex-wrap">
               <Badge variant="outline" className="border-violet-500/30 bg-violet-500/10 text-violet-300 capitalize text-xs">
@@ -96,7 +96,7 @@ export default async function EventPage({ params }: EventPageProps) {
       </div>
 
       {/* Tabs panels */}
-      <div className="max-w-6xl mx-auto py-12 px-6">
+      <div className="max-w-6xl">
         <Tabs defaultValue="overview" className="space-y-8">
           <TabsList className="bg-neutral-900 border border-neutral-800 p-1 rounded-lg flex flex-wrap max-w-2xl">
             <TabsTrigger value="overview" className="flex-1 py-2 text-xs font-semibold rounded-md text-neutral-400 data-[state=active]:bg-neutral-850 data-[state=active]:text-neutral-100">Overview</TabsTrigger>

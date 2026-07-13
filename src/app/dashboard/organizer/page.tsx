@@ -114,7 +114,7 @@ export default async function OrganizerDashboardPage() {
                       Control Room
                     </Button>
                   </Link>
-                  <Link href={`/events/${event.slug}`} target="_blank">
+                  <Link href={`/dashboard/participant/events/${event.slug}`} target="_blank">
                     <Button variant="outline" className="border-neutral-800 bg-neutral-950 hover:bg-neutral-900 text-neutral-400 hover:text-neutral-200 text-xs h-9 px-4">
                       View Page
                     </Button>

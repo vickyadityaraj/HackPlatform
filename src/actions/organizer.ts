@@ -126,7 +126,7 @@ export async function createAnnouncement(
     });
   }
 
-  revalidatePath(`/events/${event.slug}`);
+  revalidatePath(`/dashboard/participant/events/${event.slug}`);
   revalidatePath(`/dashboard/organizer/events/${eventId}`);
   return announcement;
 }

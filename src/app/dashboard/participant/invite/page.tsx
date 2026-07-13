@@ -20,7 +20,7 @@ export default async function ParticipantInvitePage({ searchParams }: InvitePage
   }
 
   if (!userId) {
-    redirect("/matchmaking");
+    redirect("/dashboard/participant/matchmaking");
   }
 
   // Get target user
@@ -39,7 +39,7 @@ export default async function ParticipantInvitePage({ searchParams }: InvitePage
             <p className="text-xs text-neutral-450">
               The developer profile you are trying to invite does not exist on the platform.
             </p>
-            <Link href="/matchmaking">
+            <Link href="/dashboard/participant/matchmaking">
               <Button className="bg-neutral-800 hover:bg-neutral-755 text-xs mt-2">
                 Back to Matchmaking
               </Button>
@@ -71,7 +71,7 @@ export default async function ParticipantInvitePage({ searchParams }: InvitePage
   return (
     <div className="max-w-xl mx-auto py-8 px-4 font-sans space-y-6">
       {/* Back link */}
-      <Link href="/matchmaking" className="inline-flex items-center gap-2 text-xs text-neutral-400 hover:text-neutral-200 transition-colors">
+      <Link href="/dashboard/participant/matchmaking" className="inline-flex items-center gap-2 text-xs text-neutral-400 hover:text-neutral-200 transition-colors">
         <ArrowLeft className="w-4 h-4" />
         Back to Matchmaking
       </Link>
@@ -131,7 +131,7 @@ export default async function ParticipantInvitePage({ searchParams }: InvitePage
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-neutral-850">
-                <Link href="/matchmaking">
+                <Link href="/dashboard/participant/matchmaking">
                   <Button type="button" variant="outline" className="border-neutral-850 bg-neutral-950 text-neutral-450 hover:text-neutral-200 text-xs">
                     Cancel
                   </Button>

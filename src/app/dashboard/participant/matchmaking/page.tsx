@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Github, Linkedin, Briefcase, Globe, GraduationCap, ArrowRight, UserPlus } from "lucide-react";
+import { Search, Github, Linkedin, Briefcase, Globe, GraduationCap, UserPlus } from "lucide-react";
 import Link from "next/link";
 
 interface SearchParams {
@@ -39,13 +39,13 @@ export default async function MatchmakingPage({
   });
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans p-6 md:p-12 space-y-8">
+    <div className="space-y-8 font-sans">
       {/* Header Info */}
       <div className="max-w-4xl">
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-neutral-50 to-neutral-455 bg-clip-text text-transparent">
+        <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-neutral-50 to-neutral-400 bg-clip-text text-transparent">
           Developer Matchmaking Hub
         </h1>
-        <p className="text-neutral-400 text-sm md:text-base mt-2">
+        <p className="text-neutral-400 text-sm mt-2">
           Find your dream hackathon team members. Search profiles, filtering by languages, expertise, or universities, and extend invitations to join your workspace.
         </p>
       </div>
@@ -200,7 +200,7 @@ export default async function MatchmakingPage({
       {/* Pagination component */}
       {totalPages > 1 && (
         <div className="flex justify-center items-center gap-3 pt-6">
-          <Link href={`/matchmaking?search=${search}&skills=${resolvedParams.skills || ""}&experience=${experience}&sortBy=${sortBy}&page=${Math.max(currentPage - 1, 1)}`}>
+          <Link href={`/dashboard/participant/matchmaking?search=${search}&skills=${resolvedParams.skills || ""}&experience=${experience}&sortBy=${sortBy}&page=${Math.max(currentPage - 1, 1)}`}>
             <Button variant="outline" disabled={currentPage === 1} className="border-neutral-850 bg-neutral-900 text-neutral-300 text-xs h-9">
               Previous
             </Button>
@@ -208,7 +208,7 @@ export default async function MatchmakingPage({
           <span className="text-xs text-neutral-400 font-semibold">
             Page {currentPage} of {totalPages}
           </span>
-          <Link href={`/matchmaking?search=${search}&skills=${resolvedParams.skills || ""}&experience=${experience}&sortBy=${sortBy}&page=${Math.min(currentPage + 1, totalPages)}`}>
+          <Link href={`/dashboard/participant/matchmaking?search=${search}&skills=${resolvedParams.skills || ""}&experience=${experience}&sortBy=${sortBy}&page=${Math.min(currentPage + 1, totalPages)}`}>
             <Button variant="outline" disabled={currentPage === totalPages} className="border-neutral-850 bg-neutral-900 text-neutral-300 text-xs h-9">
               Next
             </Button>

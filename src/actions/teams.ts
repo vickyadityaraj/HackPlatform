@@ -65,7 +65,7 @@ export async function createTeam(name: string, eventId: string) {
   });
 
   revalidatePath(`/dashboard/participant/teams`);
-  revalidatePath(`/events/${eventId}`);
+  revalidatePath(`/dashboard/participant/events/${eventId}`);
   return result;
 }
 

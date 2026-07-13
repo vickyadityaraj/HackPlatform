@@ -1,3 +1,16 @@
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
+
+export default async function Home() {
+  const session = await auth();
+  if (session?.user) {
+    redirect("/dashboard");
+  } else {
+    redirect("/auth/login");
+  }
+}
+
+/*
 import Link from "next/link";
 import { auth } from "@/auth";
 import { ArrowRight, BrainCircuit, Code2, Trophy, Users } from "lucide-react";
@@ -10,11 +23,11 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col relative overflow-hidden font-sans">
-      {/* Background Gradients */}
+      // Background Gradients
       <div className="absolute top-[-10%] right-[-5%] w-[60%] h-[40%] rounded-full bg-blue-600/10 blur-[130px] pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-5%] w-[60%] h-[40%] rounded-full bg-violet-600/10 blur-[130px] pointer-events-none" />
 
-      {/* Navigation Header */}
+      // Navigation Header
       <header className="border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -65,7 +78,7 @@ export default async function Home() {
         </div>
       </header>
 
-      {/* Hero Section */}
+      // Hero Section
       <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center text-center py-20 relative z-10">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-blue-500/25 bg-blue-500/5 text-xs text-blue-400 mb-6 font-medium tracking-wide">
           <BrainCircuit className="h-3.5 w-3.5" />
@@ -121,7 +134,7 @@ export default async function Home() {
           )}
         </div>
 
-        {/* Feature Grid */}
+        // Feature Grid
         <section className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full mt-24">
           <div className="border border-slate-900 bg-slate-900/40 backdrop-blur-md p-6 rounded-2xl text-left hover:border-slate-800 transition-all duration-300">
             <div className="h-10 w-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 mb-5 shadow-sm shadow-blue-500/5">
@@ -155,7 +168,7 @@ export default async function Home() {
         </section>
       </main>
 
-      {/* Footer */}
+      // Footer
       <footer className="border-t border-slate-900 py-8 relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-500 text-sm">
           <p>© 2026 Hackathon Portal. Built with Next.js 15, Prisma & Supabase.</p>
@@ -168,3 +181,5 @@ export default async function Home() {
     </div>
   );
 }
+*/
+

@@ -50,7 +50,7 @@ export async function submitProject(
     },
   });
 
-  revalidatePath(`/events/${eventId}`);
+  revalidatePath(`/dashboard/participant/events/${eventId}`);
   return submission;
 }
 

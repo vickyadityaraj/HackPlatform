@@ -51,7 +51,7 @@ export async function registerForEvent(eventId: string, answers: any[]) {
     },
   });
 
-  revalidatePath(`/events/${event.slug}`);
+  revalidatePath(`/dashboard/participant/events/${event.slug}`);
   revalidatePath(`/dashboard/participant/teams`);
   return registration;
 }

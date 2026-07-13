@@ -56,66 +56,72 @@ function LoginForm() {
   };
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center bg-slate-950 overflow-hidden px-4">
-      {/* Decorative Background Gradients */}
-      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-600/10 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-violet-600/10 blur-[120px] pointer-events-none" />
+    <div className="relative min-h-screen w-full flex items-center justify-center bg-neutral-950 overflow-hidden px-4 font-sans">
+      {/* Soft Background Gradients */}
+      <div className="absolute top-[-15%] left-[-10%] w-[55%] h-[50%] rounded-full bg-blue-600/5 blur-[140px] pointer-events-none" />
+      <div className="absolute bottom-[-15%] right-[-10%] w-[55%] h-[50%] rounded-full bg-violet-600/5 blur-[140px] pointer-events-none" />
 
-      <div className="w-full max-w-md relative z-10">
-        <div className="flex flex-col items-center justify-center mb-6">
-          <div className="h-12 w-12 rounded-xl bg-gradient-to-tr from-blue-600 to-violet-600 flex items-center justify-center shadow-lg shadow-blue-500/20 mb-3">
-            <span className="text-xl font-bold text-white">H</span>
+      <div className="w-full max-w-[420px] relative z-10 space-y-8">
+        {/* Brand Header */}
+        <div className="flex flex-col items-center justify-center text-center space-y-3">
+          <div className="h-11 w-11 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/15">
+            <span className="text-lg font-bold text-white">H</span>
           </div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-50">Hackathon Portal</h2>
-          <p className="text-sm text-slate-400">Innovate, collaborate, and compete</p>
+          <div className="space-y-1">
+            <h2 className="text-2xl font-extrabold tracking-tight text-neutral-50">Hackathon Portal</h2>
+            <p className="text-xs text-neutral-450">Innovate, collaborate, and compete on a single platform</p>
+          </div>
         </div>
 
-        <Card className="border-slate-800 bg-slate-900/60 backdrop-blur-xl shadow-2xl">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-slate-50 font-semibold tracking-tight text-center">Sign In</CardTitle>
-            <CardDescription className="text-slate-400 text-center">
-              Enter your credentials to access your workspace
+        {/* Form Card Container */}
+        <Card className="border-neutral-800 bg-neutral-900/40 backdrop-blur-xl shadow-2xl rounded-2xl">
+          <CardHeader className="space-y-1.5 pb-6 border-b border-neutral-800/40">
+            <CardTitle className="text-xl font-bold tracking-tight text-center text-neutral-50">Sign In</CardTitle>
+            <CardDescription className="text-xs text-neutral-400 text-center">
+              Access your personalized hackathon workspace
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
+            <CardContent className="py-6 space-y-5">
               {error && (
-                <div className="flex items-center gap-2.5 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
+                <div className="flex items-center gap-2.5 rounded-lg border border-red-500/20 bg-red-500/10 p-3.5 text-xs text-red-400 font-medium">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
                   <span>{error}</span>
                 </div>
               )}
 
+              {/* Email Address Input Group */}
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-slate-300">Email Address</Label>
+                <Label htmlFor="email" className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Email Address</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
+                  <Mail className="absolute left-3.5 top-[11px] h-4 w-4 text-neutral-500" />
                   <Input
                     id="email"
                     type="email"
                     placeholder="name@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-9 bg-slate-950/50 border-slate-800 text-slate-100 placeholder:text-slate-600 focus-visible:ring-blue-600"
+                    className="pl-10 bg-neutral-950/60 border-neutral-800 text-neutral-200 placeholder:text-neutral-600 focus-visible:ring-violet-500/40 focus-visible:border-violet-500 text-sm h-10"
                     disabled={loading}
                     required
                   />
                 </div>
               </div>
 
+              {/* Password Input Group */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-slate-300">Password</Label>
+                  <Label htmlFor="password" className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Password</Label>
                 </div>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
+                  <Lock className="absolute left-3.5 top-[11px] h-4 w-4 text-neutral-500" />
                   <Input
                     id="password"
                     type="password"
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-9 bg-slate-950/50 border-slate-800 text-slate-100 placeholder:text-slate-600 focus-visible:ring-blue-600"
+                    className="pl-10 bg-neutral-950/60 border-neutral-800 text-neutral-200 placeholder:text-neutral-600 focus-visible:ring-violet-500/40 focus-visible:border-violet-500 text-sm h-10"
                     disabled={loading}
                     required
                   />
@@ -123,10 +129,10 @@ function LoginForm() {
               </div>
             </CardContent>
             
-            <CardFooter className="flex flex-col space-y-4">
+            <CardFooter className="flex flex-col space-y-4 pt-4 pb-6 px-6 border-t border-neutral-800/35">
               <Button 
                 type="submit" 
-                className="w-full bg-gradient-to-r from-blue-600 to-violet-600 text-white font-medium hover:from-blue-500 hover:to-violet-500 shadow-lg shadow-blue-500/15" 
+                className="w-full bg-violet-600 text-neutral-100 font-semibold hover:bg-violet-700 shadow-md shadow-violet-500/10 h-10 text-sm transition-all duration-200" 
                 disabled={loading}
               >
                 {loading ? (
@@ -142,11 +148,11 @@ function LoginForm() {
                 )}
               </Button>
 
-              <div className="text-sm text-center text-slate-400">
+              <div className="text-xs text-center text-neutral-450">
                 {"Don't have an account? "}
                 <Link 
                   href="/auth/register" 
-                  className="font-medium text-blue-500 hover:text-blue-400 transition-colors"
+                  className="font-semibold text-violet-400 hover:text-violet-300 transition-colors"
                 >
                   Create one now
                 </Link>

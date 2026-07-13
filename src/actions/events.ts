@@ -94,7 +94,7 @@ export async function updateEvent(
   });
 
   revalidatePath("/dashboard/organizer");
-  revalidatePath(`/events/${updatedEvent.slug}`);
+  revalidatePath(`/dashboard/participant/events/${updatedEvent.slug}`);
   return updatedEvent;
 }
 
@@ -124,7 +124,7 @@ export async function publishEvent(id: string) {
   });
 
   revalidatePath("/dashboard/organizer");
-  revalidatePath(`/events/${updatedEvent.slug}`);
+  revalidatePath(`/dashboard/participant/events/${updatedEvent.slug}`);
   return updatedEvent;
 }
 

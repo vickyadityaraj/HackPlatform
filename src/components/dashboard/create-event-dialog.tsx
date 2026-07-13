@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -9,12 +9,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createEvent } from "@/actions/events";
+import { uploadFile } from "@/actions/storage";
 import { useRouter } from "next/navigation";
+import { Upload, Image as ImageIcon, Loader2 } from "lucide-react";
 
 const eventFormSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
   slug: z.string().min(3, "Slug must be at least 3 characters").regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens"),
   description: z.string().min(10, "Description must be at least 10 characters"),
+  bannerUrl: z.string().optional().nullable().or(z.literal("")),
   registrationStart: z.string().min(1, "Required"),
   registrationEnd: z.string().min(1, "Required"),
   eventStart: z.string().min(1, "Required"),
@@ -36,6 +39,7 @@ export function CreateEventDialog({ trigger }: { trigger: React.ReactElement }) 
       title: "",
       slug: "",
       description: "",
+      bannerUrl: "",
       registrationStart: "",
       registrationEnd: "",
       eventStart: "",
@@ -44,12 +48,35 @@ export function CreateEventDialog({ trigger }: { trigger: React.ReactElement }) 
     },
   });
 
+  const [uploadingBanner, setUploadingBanner] = useState(false);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingBanner(true);
+    setError(null);
+    try {
+      const data = new FormData();
+      data.append("file", file);
+      data.append("folder", "banners");
+      const res = await uploadFile(data);
+      form.setValue("bannerUrl", res.url);
+    } catch (err: any) {
+      setError(err.message || "Failed to upload banner image");
+    } finally {
+      setUploadingBanner(false);
+    }
+  };
+
   const onSubmit = async (values: EventFormValues) => {
     setLoading(true);
     setError(null);
     try {
       await createEvent({
         ...values,
+        bannerUrl: values.bannerUrl || null,
         registrationStart: new Date(values.registrationStart),
         registrationEnd: new Date(values.registrationEnd),
         eventStart: new Date(values.eventStart),
@@ -79,6 +106,75 @@ export function CreateEventDialog({ trigger }: { trigger: React.ReactElement }) 
               {error}
             </div>
           )}
+
+          {/* Banner Image Uploader */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Event Banner Image</Label>
+            <div className="relative w-full h-40 rounded-xl bg-neutral-950 border border-neutral-800 flex flex-col items-center justify-center overflow-hidden group">
+              {form.watch("bannerUrl") ? (
+                <>
+                  <img
+                    src={form.watch("bannerUrl") || ""}
+                    alt="Banner Preview"
+                    className="h-full w-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-all duration-200">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => bannerInputRef.current?.click()}
+                      className="border-neutral-700 bg-neutral-900 text-neutral-200 hover:bg-neutral-850"
+                    >
+                      <Upload className="w-3.5 h-3.5 mr-1.5" />
+                      Change Banner
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => form.setValue("bannerUrl", "")}
+                      className="text-red-400 hover:text-red-300 hover:bg-red-950/20"
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center p-6 text-center">
+                  <ImageIcon className="w-8 h-8 text-neutral-600 mb-2" />
+                  <p className="text-xs text-neutral-500 mb-2">Recommended resolution: 1200 x 400 pixels</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={uploadingBanner}
+                    onClick={() => bannerInputRef.current?.click()}
+                    className="border-neutral-850 bg-neutral-900 text-neutral-300 hover:bg-neutral-800"
+                  >
+                    {uploadingBanner ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                        Uploading Banner...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-3.5 h-3.5 mr-1.5" />
+                        Upload Banner
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+            <input
+              type="file"
+              ref={bannerInputRef}
+              onChange={handleBannerUpload}
+              accept="image/*"
+              className="hidden"
+            />
+          </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="title">Event Title</Label>
