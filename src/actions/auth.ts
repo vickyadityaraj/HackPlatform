@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { sendOtpEmail } from "@/lib/mail";
 
 const registerSchema = z
   .object({
@@ -17,6 +18,126 @@ const registerSchema = z
   });
 
 export type RegisterInput = z.infer<typeof registerSchema>;
+
+export async function sendRegistrationOtp(email: string) {
+  try {
+    const emailLower = email.toLowerCase().trim();
+
+    // 1. Check if email already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: emailLower },
+    });
+
+    if (existingUser) {
+      return { success: false, error: "Email is already registered" };
+    }
+
+    // 2. Generate a 6-digit numeric OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+
+    // 3. Clear existing tokens for this email
+    await prisma.verificationToken.deleteMany({
+      where: { identifier: emailLower },
+    });
+
+    // 4. Save new OTP to database
+    await prisma.verificationToken.create({
+      data: {
+        identifier: emailLower,
+        token: otp,
+        expires,
+      },
+    });
+
+    // 5. Send OTP Email
+    await sendOtpEmail(emailLower, otp);
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error sending registration OTP:", error);
+    return { success: false, error: "Failed to send verification code. Please try again." };
+  }
+}
+
+export async function verifyOtpAndRegisterUser(
+  name: string,
+  email: string,
+  password: string,
+  otp: string
+) {
+  try {
+    const emailLower = email.toLowerCase().trim();
+    const otpTrimmed = otp.trim();
+
+    // 1. Verify token exists and is valid
+    const verificationToken = await prisma.verificationToken.findFirst({
+      where: {
+        identifier: emailLower,
+        token: otpTrimmed,
+      },
+    });
+
+    if (!verificationToken) {
+      return { success: false, error: "Invalid verification code" };
+    }
+
+    if (new Date() > verificationToken.expires) {
+      // Clean up expired token
+      await prisma.verificationToken.delete({
+        where: {
+          identifier_token: {
+            identifier: emailLower,
+            token: otpTrimmed,
+          },
+        },
+      });
+      return { success: false, error: "Verification code has expired. Please request a new one." };
+    }
+
+    // 2. Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 3. Create the user, user profile, and clean up the token in a transaction
+    const user = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          name,
+          email: emailLower,
+          password: hashedPassword,
+          role: "PARTICIPANT",
+          status: "ACTIVE",
+          emailVerified: new Date(),
+        },
+      });
+
+      await tx.profile.create({
+        data: {
+          userId: newUser.id,
+          skills: [],
+          badges: [],
+        },
+      });
+
+      // Delete the verified token
+      await tx.verificationToken.delete({
+        where: {
+          identifier_token: {
+            identifier: emailLower,
+            token: otpTrimmed,
+          },
+        },
+      });
+
+      return newUser;
+    });
+
+    return { success: true, user: { id: user.id, name: user.name, email: user.email } };
+  } catch (error: any) {
+    console.error("Verification and registration error:", error);
+    return { success: false, error: "An unexpected error occurred during verification" };
+  }
+}
 
 export async function registerUser(data: RegisterInput) {
   try {

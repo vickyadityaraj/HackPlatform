@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { registerUser } from "@/actions/auth";
+import { sendRegistrationOtp, verifyOtpAndRegisterUser } from "@/actions/auth";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,11 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   
+  const [step, setStep] = useState<"DETAILS" | "OTP">("DETAILS");
+  const [otp, setOtp] = useState("");
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [otpLoading, setOtpLoading] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -45,28 +50,51 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const res = await registerUser({
-        name,
-        email,
-        password,
-        confirmPassword,
-      });
+      const res = await sendRegistrationOtp(email);
 
       if (!res.success) {
         setError(res.error || "Failed to create account. Please try again.");
         setLoading(false);
       } else {
-        setSuccess(true);
+        setStep("OTP");
         setLoading(false);
+      }
+    } catch (err) {
+      console.error("Registration OTP send error:", err);
+      setError("An unexpected error occurred. Please check SMTP credentials.");
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setOtpError(null);
+
+    if (!otp || otp.length !== 6) {
+      setOtpError("Please enter a valid 6-digit code.");
+      return;
+    }
+
+    setOtpLoading(true);
+
+    try {
+      const res = await verifyOtpAndRegisterUser(name, email, password, otp);
+
+      if (!res.success) {
+        setOtpError(res.error || "Verification failed. Please try again.");
+        setOtpLoading(false);
+      } else {
+        setSuccess(true);
+        setOtpLoading(false);
         // Redirect to login after 2 seconds
         setTimeout(() => {
           router.push("/auth/login");
         }, 2000);
       }
     } catch (err) {
-      console.error("Registration submit error:", err);
-      setError("An unexpected error occurred. Please try again.");
-      setLoading(false);
+      console.error("OTP verification error:", err);
+      setOtpError("An unexpected error occurred during verification.");
+      setOtpLoading(false);
     }
   };
 
@@ -91,108 +119,115 @@ export default function RegisterPage() {
         {/* Card Container */}
         <Card className="border-neutral-800 bg-neutral-900/40 backdrop-blur-xl shadow-2xl rounded-2xl">
           <CardHeader className="space-y-1.5 pb-6 border-b border-neutral-800/40">
-            <CardTitle className="text-xl font-bold tracking-tight text-center text-neutral-50">Create Account</CardTitle>
+            <CardTitle className="text-xl font-bold tracking-tight text-center text-neutral-50">
+              {success ? "Success" : step === "DETAILS" ? "Create Account" : "Verify Email"}
+            </CardTitle>
             <CardDescription className="text-xs text-neutral-400 text-center">
-              Register as a Participant to start competing
+              {success 
+                ? "Setup Completed" 
+                : step === "DETAILS" 
+                  ? "Register as a Participant to start competing" 
+                  : `Enter the 6-digit verification code sent to ${email}`}
             </CardDescription>
           </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent className="py-6 space-y-5">
-              {success ? (
-                <div className="flex flex-col items-center justify-center py-6 text-center space-y-4">
-                  <div className="h-12 w-12 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                    <CheckCircle2 className="h-6 w-6" />
+
+          {success && (
+            <CardContent className="py-8">
+              <div className="flex flex-col items-center justify-center py-6 text-center space-y-4">
+                <div className="h-12 w-12 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                  <CheckCircle2 className="h-6 w-6" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-lg font-bold text-emerald-450">Account Verified!</h3>
+                  <p className="text-xs text-neutral-400">Redirecting you to the sign-in screen...</p>
+                </div>
+              </div>
+            </CardContent>
+          )}
+
+          {step === "DETAILS" && !success && (
+            <form onSubmit={handleSubmit}>
+              <CardContent className="py-6 space-y-5">
+                {error && (
+                  <div className="flex items-center gap-2.5 rounded-lg border border-red-500/20 bg-red-500/10 p-3.5 text-xs text-red-400 font-medium">
+                    <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
+                    <span>{error}</span>
                   </div>
-                  <div className="space-y-1">
-                    <h3 className="text-lg font-bold text-emerald-450">Account Created Successfully!</h3>
-                    <p className="text-xs text-neutral-400">Redirecting you to the sign-in screen...</p>
+                )}
+
+                {/* Name Input Group */}
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Full Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3.5 top-[11px] h-4 w-4 text-neutral-500" />
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="John Doe"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="pl-10 bg-neutral-950/60 border-neutral-800 text-neutral-200 placeholder:text-neutral-600 focus-visible:ring-violet-500/40 focus-visible:border-violet-500 text-sm h-10"
+                      disabled={loading}
+                      required
+                    />
                   </div>
                 </div>
-              ) : (
-                <>
-                  {error && (
-                    <div className="flex items-center gap-2.5 rounded-lg border border-red-500/20 bg-red-500/10 p-3.5 text-xs text-red-400 font-medium">
-                      <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
-                      <span>{error}</span>
-                    </div>
-                  )}
 
-                  {/* Name Input Group */}
-                  <div className="space-y-2">
-                    <Label htmlFor="name" className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Full Name</Label>
-                    <div className="relative">
-                      <User className="absolute left-3.5 top-[11px] h-4 w-4 text-neutral-500" />
-                      <Input
-                        id="name"
-                        type="text"
-                        placeholder="John Doe"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="pl-10 bg-neutral-950/60 border-neutral-800 text-neutral-200 placeholder:text-neutral-600 focus-visible:ring-violet-500/40 focus-visible:border-violet-500 text-sm h-10"
-                        disabled={loading}
-                        required
-                      />
-                    </div>
+                {/* Email Input Group */}
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Email Address</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-[11px] h-4 w-4 text-neutral-500" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="name@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-10 bg-neutral-950/60 border-neutral-800 text-neutral-200 placeholder:text-neutral-600 focus-visible:ring-violet-500/40 focus-visible:border-violet-500 text-sm h-10"
+                      disabled={loading}
+                      required
+                    />
                   </div>
+                </div>
 
-                  {/* Email Input Group */}
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Email Address</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3.5 top-[11px] h-4 w-4 text-neutral-500" />
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="name@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="pl-10 bg-neutral-950/60 border-neutral-800 text-neutral-200 placeholder:text-neutral-600 focus-visible:ring-violet-500/40 focus-visible:border-violet-500 text-sm h-10"
-                        disabled={loading}
-                        required
-                      />
-                    </div>
+                {/* Password Input Group */}
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-[11px] h-4 w-4 text-neutral-500" />
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pl-10 bg-neutral-950/60 border-neutral-800 text-neutral-200 placeholder:text-neutral-600 focus-visible:ring-violet-500/40 focus-visible:border-violet-500 text-sm h-10"
+                      disabled={loading}
+                      required
+                    />
                   </div>
+                </div>
 
-                  {/* Password Input Group */}
-                  <div className="space-y-2">
-                    <Label htmlFor="password" className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3.5 top-[11px] h-4 w-4 text-neutral-500" />
-                      <Input
-                        id="password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="pl-10 bg-neutral-950/60 border-neutral-800 text-neutral-200 placeholder:text-neutral-600 focus-visible:ring-violet-500/40 focus-visible:border-violet-500 text-sm h-10"
-                        disabled={loading}
-                        required
-                      />
-                    </div>
+                {/* Confirm Password Input Group */}
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword" className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Confirm Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-[11px] h-4 w-4 text-neutral-500" />
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="pl-10 bg-neutral-950/60 border-neutral-800 text-neutral-200 placeholder:text-neutral-600 focus-visible:ring-violet-500/40 focus-visible:border-violet-500 text-sm h-10"
+                      disabled={loading}
+                      required
+                    />
                   </div>
+                </div>
+              </CardContent>
 
-                  {/* Confirm Password Input Group */}
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword" className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Confirm Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3.5 top-[11px] h-4 w-4 text-neutral-500" />
-                      <Input
-                        id="confirmPassword"
-                        type="password"
-                        placeholder="••••••••"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="pl-10 bg-neutral-950/60 border-neutral-800 text-neutral-200 placeholder:text-neutral-600 focus-visible:ring-violet-500/40 focus-visible:border-violet-500 text-sm h-10"
-                        disabled={loading}
-                        required
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-            </CardContent>
-            
-            {!success && (
               <CardFooter className="flex flex-col space-y-4 pt-4 pb-6 px-6 border-t border-neutral-800/35">
                 <Button 
                   type="submit" 
@@ -202,11 +237,11 @@ export default function RegisterPage() {
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating account...
+                      Sending verification code...
                     </>
                   ) : (
                     <>
-                      Sign Up
+                      Sign Up & Verify Email
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </>
                   )}
@@ -222,8 +257,84 @@ export default function RegisterPage() {
                   </Link>
                 </div>
               </CardFooter>
-            )}
-          </form>
+            </form>
+          )}
+
+          {step === "OTP" && !success && (
+            <form onSubmit={handleVerifyOtp}>
+              <CardContent className="py-6 space-y-5">
+                {otpError && (
+                  <div className="flex items-center gap-2.5 rounded-lg border border-red-500/20 bg-red-500/10 p-3.5 text-xs text-red-400 font-medium">
+                    <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
+                    <span>{otpError}</span>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="otp" className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Verification Code</Label>
+                  <Input
+                    id="otp"
+                    type="text"
+                    maxLength={6}
+                    placeholder="••••••"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                    className="bg-neutral-950/60 border-neutral-800 text-neutral-200 placeholder:text-neutral-600 focus-visible:ring-violet-500/40 focus-visible:border-violet-500 text-center tracking-[0.8em] pl-[0.9em] font-mono text-lg h-11"
+                    disabled={otpLoading}
+                    required
+                  />
+                </div>
+
+                <div className="flex items-center justify-between text-xs pt-1">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setOtpError(null);
+                      setOtp("");
+                      const res = await sendRegistrationOtp(email);
+                      if (res.success) {
+                        alert("A new verification code has been sent!");
+                      } else {
+                        setOtpError(res.error || "Failed to resend code.");
+                      }
+                    }}
+                    className="text-violet-400 hover:text-violet-300 font-semibold transition-colors"
+                    disabled={otpLoading}
+                  >
+                    Resend Code
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStep("DETAILS")}
+                    className="text-neutral-400 hover:text-neutral-350 transition-colors font-medium"
+                    disabled={otpLoading}
+                  >
+                    Change Email
+                  </button>
+                </div>
+              </CardContent>
+
+              <CardFooter className="flex flex-col space-y-4 pt-4 pb-6 px-6 border-t border-neutral-800/35">
+                <Button 
+                  type="submit" 
+                  className="w-full bg-violet-600 text-neutral-100 font-semibold hover:bg-violet-750 shadow-md shadow-violet-500/10 h-10 text-sm transition-all duration-200" 
+                  disabled={otpLoading}
+                >
+                  {otpLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Verifying...
+                    </>
+                  ) : (
+                    <>
+                      Verify & Complete Signup
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </CardFooter>
+            </form>
+          )}
         </Card>
       </div>
     </div>

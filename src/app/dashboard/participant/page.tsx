@@ -5,10 +5,32 @@ import { getParticipantRegistrations } from "@/actions/registration";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ProfileForm } from "@/components/dashboard/profile-form";
-import { TeamWorkspace } from "@/components/dashboard/team-workspace";
-import { PendingInvitationsList } from "@/components/dashboard/pending-invitations-list";
 import { User, Users, Mail } from "lucide-react";
+import dynamic from "next/dynamic";
+
+const TeamWorkspace = dynamic(
+  () => import("@/components/dashboard/team-workspace").then((mod) => mod.TeamWorkspace),
+  {
+    ssr: false,
+    loading: () => <div className="p-8 text-center text-neutral-500 text-xs">Loading team workspace...</div>,
+  }
+);
+
+const PendingInvitationsList = dynamic(
+  () => import("@/components/dashboard/pending-invitations-list").then((mod) => mod.PendingInvitationsList),
+  {
+    ssr: false,
+    loading: () => <div className="p-8 text-center text-neutral-500 text-xs">Loading invitations...</div>,
+  }
+);
+
+const ProfileForm = dynamic(
+  () => import("@/components/dashboard/profile-form").then((mod) => mod.ProfileForm),
+  {
+    ssr: false,
+    loading: () => <div className="p-8 text-center text-neutral-500 text-xs">Loading profile form...</div>,
+  }
+);
 
 export default async function ParticipantDashboardPage() {
   const session = await auth();
@@ -17,11 +39,13 @@ export default async function ParticipantDashboardPage() {
     redirect("/auth/login");
   }
 
-  // Load backend states
-  const profile = await getProfile();
-  const teams = await getParticipantTeams();
-  const invites = await getPendingInvitations();
-  const registrations = await getParticipantRegistrations();
+  // Load backend states in parallel
+  const [profile, teams, invites, registrations] = await Promise.all([
+    getProfile(),
+    getParticipantTeams(),
+    getPendingInvitations(),
+    getParticipantRegistrations(),
+  ]);
 
   return (
     <div className="space-y-6 font-sans">

@@ -3,9 +3,24 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UserManagementTable } from "@/components/dashboard/user-management-table";
-import { AdminSettingsForm } from "@/components/dashboard/admin-settings-form";
 import { Users, Settings, ScrollText, Calendar, Lock } from "lucide-react";
+import dynamic from "next/dynamic";
+
+const UserManagementTable = dynamic(
+  () => import("@/components/dashboard/user-management-table").then((mod) => mod.UserManagementTable),
+  {
+    ssr: false,
+    loading: () => <div className="p-8 text-center text-neutral-500 text-xs">Loading user management...</div>,
+  }
+);
+
+const AdminSettingsForm = dynamic(
+  () => import("@/components/dashboard/admin-settings-form").then((mod) => mod.AdminSettingsForm),
+  {
+    ssr: false,
+    loading: () => <div className="p-8 text-center text-neutral-500 text-xs">Loading settings...</div>,
+  }
+);
 
 export default async function AdminDashboardPage() {
   const session = await auth();
@@ -14,10 +29,12 @@ export default async function AdminDashboardPage() {
     redirect("/dashboard");
   }
 
-  // Load admin panels data
-  const settings = await getPlatformSettings();
-  const users = await getUsersList();
-  const logs = await getAuditLogs();
+  // Load admin panels data in parallel
+  const [settings, users, logs] = await Promise.all([
+    getPlatformSettings(),
+    getUsersList(),
+    getAuditLogs(),
+  ]);
 
   const totalUsers = users.length;
   const suspendedUsers = users.filter((u) => u.status === "SUSPENDED").length;

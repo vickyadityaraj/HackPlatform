@@ -5,10 +5,18 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { EvaluationCenter } from "@/components/dashboard/evaluation-center";
 import { Award, CheckCircle2, ChevronRight, FileText, Calendar, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import dynamic from "next/dynamic";
+
+const EvaluationCenter = dynamic(
+  () => import("@/components/dashboard/evaluation-center").then((mod) => mod.EvaluationCenter),
+  {
+    ssr: false,
+    loading: () => <div className="p-8 text-center text-neutral-500 text-xs">Loading evaluation rubric...</div>,
+  }
+);
 
 interface JudgeDashboardPageProps {
   searchParams: Promise<{ eventId?: string; submissionId?: string }>;

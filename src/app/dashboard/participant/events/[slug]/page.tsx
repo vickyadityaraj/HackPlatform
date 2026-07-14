@@ -8,7 +8,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, Award, ShieldAlert, Trophy, Users, Megaphone } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { RegisterDialog } from "@/components/dashboard/register-dialog";
+import dynamic from "next/dynamic";
+
+const RegisterDialog = dynamic(
+  () => import("@/components/dashboard/register-dialog").then((mod) => mod.RegisterDialog),
+  {
+    ssr: false,
+    loading: () => <Button className="w-full bg-violet-600 hover:bg-violet-750 text-neutral-100 font-semibold h-11" disabled>Registering...</Button>
+  }
+);
 
 interface EventPageProps {
   params: Promise<{
@@ -32,8 +40,10 @@ export default async function EventPage({ params }: EventPageProps) {
   const timeline = event.timeline ? (typeof event.timeline === "string" ? JSON.parse(event.timeline) : event.timeline) : [];
   const customQuestions = event.customQuestions ? (typeof event.customQuestions === "string" ? JSON.parse(event.customQuestions) : event.customQuestions) : [];
 
-  const registration = await checkUserRegistration(event.id);
-  const leaderboard = await getLeaderboard(event.id);
+  const [registration, leaderboard] = await Promise.all([
+    checkUserRegistration(event.id),
+    getLeaderboard(event.id),
+  ]);
   const isRegistered = !!registration;
   const inTeam = !!registration?.teamId;
 

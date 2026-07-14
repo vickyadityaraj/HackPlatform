@@ -4,11 +4,27 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FormBuilder } from "@/components/dashboard/form-builder";
-import RegistrationsClient from "./registrations-client";
-import JudgesClient from "./judges-client";
 import { ClipboardList, Users, ShieldAlert, BadgeInfo, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import dynamic from "next/dynamic";
+
+const FormBuilder = dynamic(
+  () => import("@/components/dashboard/form-builder").then((mod) => mod.FormBuilder),
+  {
+    ssr: false,
+    loading: () => <div className="p-8 text-center text-neutral-500 text-xs">Loading form builder...</div>,
+  }
+);
+
+const RegistrationsClient = dynamic(() => import("./registrations-client"), {
+  ssr: false,
+  loading: () => <div className="p-8 text-center text-neutral-500 text-xs">Loading registrations...</div>,
+});
+
+const JudgesClient = dynamic(() => import("./judges-client"), {
+  ssr: false,
+  loading: () => <div className="p-8 text-center text-neutral-500 text-xs">Loading judges...</div>,
+});
 
 interface EventControlRoomProps {
   params: Promise<{ id: string }>;
@@ -40,9 +56,11 @@ export default async function EventControlRoom({ params }: EventControlRoomProps
     redirect("/dashboard/organizer");
   }
 
-  // Load related tables
-  const registrations = await getEventRegistrations(id);
-  const teams = await getEventTeams(id);
+  // Load related tables in parallel
+  const [registrations, teams] = await Promise.all([
+    getEventRegistrations(id),
+    getEventTeams(id),
+  ]);
 
   return (
     <div className="space-y-6 font-sans">
