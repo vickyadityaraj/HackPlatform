@@ -56,13 +56,13 @@ export async function registerForEvent(eventId: string, answers: any[]) {
   return registration;
 }
 
-export async function checkUserRegistration(eventId: string) {
-  const sessionUser = await requireAuth().catch(() => null);
-  if (!sessionUser) return null;
+export async function checkUserRegistration(eventId: string, userId?: string) {
+  const finalUserId = userId || (await requireAuth().catch(() => null))?.id;
+  if (!finalUserId) return null;
 
   return await prisma.registration.findUnique({
     where: {
-      userId_eventId: { userId: sessionUser.id, eventId },
+      userId_eventId: { userId: finalUserId, eventId },
     },
     include: {
       team: true,
@@ -70,11 +70,11 @@ export async function checkUserRegistration(eventId: string) {
   });
 }
 
-export async function getParticipantRegistrations() {
-  const user = await requireAuth();
+export async function getParticipantRegistrations(userId?: string) {
+  const finalUserId = userId || (await requireAuth()).id;
 
   return await prisma.registration.findMany({
-    where: { userId: user.id, deletedAt: null },
+    where: { userId: finalUserId, deletedAt: null },
     include: {
       event: {
         select: { id: true, title: true, slug: true },

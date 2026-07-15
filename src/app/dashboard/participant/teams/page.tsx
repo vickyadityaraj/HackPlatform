@@ -2,7 +2,15 @@ import { getParticipantTeams } from "@/actions/teams";
 import { getParticipantRegistrations } from "@/actions/registration";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { TeamWorkspace } from "@/components/dashboard/team-workspace";
+import dynamic from "next/dynamic";
+
+const TeamWorkspace = dynamic(
+  () => import("@/components/dashboard/team-workspace").then((mod) => mod.TeamWorkspace),
+  {
+    ssr: false,
+    loading: () => <div className="p-8 text-center text-neutral-500 text-xs">Loading team workspace...</div>,
+  }
+);
 
 export default async function ParticipantTeamsPage() {
   const session = await auth();
@@ -11,8 +19,11 @@ export default async function ParticipantTeamsPage() {
     redirect("/auth/login");
   }
 
-  const teams = await getParticipantTeams();
-  const registrations = await getParticipantRegistrations();
+  // Load related tables in parallel and pass pre-authenticated session.user.id to bypass redundant auth calls
+  const [teams, registrations] = await Promise.all([
+    getParticipantTeams(session.user.id),
+    getParticipantRegistrations(session.user.id),
+  ]);
 
   return (
     <div className="space-y-6 font-sans">

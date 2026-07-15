@@ -29,11 +29,11 @@ export default async function AdminDashboardPage() {
     redirect("/dashboard");
   }
 
-  // Load admin panels data in parallel
+  // Load admin panels data in parallel, skipping redundant auth checks since the page has already guarded the role
   const [settings, users, logs] = await Promise.all([
-    getPlatformSettings(),
-    getUsersList(),
-    getAuditLogs(),
+    getPlatformSettings(true),
+    getUsersList(true),
+    getAuditLogs(true),
   ]);
 
   const totalUsers = users.length;

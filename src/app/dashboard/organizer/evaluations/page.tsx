@@ -17,7 +17,7 @@ export default async function OrganizerEvaluationsPage({ searchParams }: Evaluat
     redirect("/dashboard");
   }
 
-  const events = await getOrganizerEvents();
+  const events = await getOrganizerEvents(session.user.id);
   const { eventId } = await searchParams;
 
   let leaderboard: any[] = [];

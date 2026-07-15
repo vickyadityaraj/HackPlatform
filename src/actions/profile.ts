@@ -18,18 +18,18 @@ const profileSchema = z.object({
   avatarUrl: z.string().url().optional().nullable().or(z.literal("")),
 });
 
-export async function getProfile() {
-  const user = await requireAuth();
+export async function getProfile(userId?: string) {
+  const finalUserId = userId || (await requireAuth()).id;
 
   // Find or create profile record
   let profile = await prisma.profile.findUnique({
-    where: { userId: user.id },
+    where: { userId: finalUserId },
   });
 
   if (!profile) {
     profile = await prisma.profile.create({
       data: {
-        userId: user.id,
+        userId: finalUserId,
         skills: [],
         experience: "",
         bio: "",

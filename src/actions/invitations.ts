@@ -9,8 +9,8 @@ import { InvitationStatus, TeamRole } from "@prisma/client";
  * Gets all teams where the current user is the leader and the target user is eligible to join.
  * Eligible means: target user is registered for the same event and NOT already in a team for that event.
  */
-export async function getLeaderTeamsForTargetUser(targetUserId: string) {
-  const user = await requireAuth();
+export async function getLeaderTeamsForTargetUser(targetUserId: string, currentUserId?: string) {
+  const finalUserId = currentUserId || (await requireAuth()).id;
 
   // 1. Get all events where target user is registered and has NO team
   const targetRegistrations = await prisma.registration.findMany({
@@ -34,7 +34,7 @@ export async function getLeaderTeamsForTargetUser(targetUserId: string) {
   // 2. Find all teams where the current user is the leader and the team is for one of those events
   const leaderTeams = await prisma.team.findMany({
     where: {
-      leaderId: user.id,
+      leaderId: finalUserId,
       eventId: { in: targetEventIds },
       deletedAt: null,
     },
@@ -143,12 +143,12 @@ export async function sendTeamInvitation(teamId: string, targetUserId: string) {
 /**
  * Gets all pending invitations for the current user.
  */
-export async function getPendingInvitations() {
-  const user = await requireAuth();
+export async function getPendingInvitations(userId?: string) {
+  const finalUserId = userId || (await requireAuth()).id;
 
   return await prisma.teamMember.findMany({
     where: {
-      userId: user.id,
+      userId: finalUserId,
       status: InvitationStatus.PENDING,
       team: { deletedAt: null },
     },

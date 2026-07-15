@@ -195,8 +195,8 @@ export async function getLeaderboard(eventId: string) {
   return leaderboardData.sort((a, b) => b.averageScore - a.averageScore);
 }
 
-export async function getJudgeSubmissions(eventId: string) {
-  const user = await requireRole(["JUDGE", "SUPER_ADMIN"]);
+export async function getJudgeSubmissions(eventId: string, userId?: string) {
+  const finalUserId = userId || (await requireRole(["JUDGE", "SUPER_ADMIN"])).id;
 
   // Fetch submissions that need evaluation
   return await prisma.submission.findMany({
@@ -208,7 +208,7 @@ export async function getJudgeSubmissions(eventId: string) {
       evaluations: {
         where: {
           judge: {
-            userId: user.id,
+            userId: finalUserId,
           },
         },
         include: {

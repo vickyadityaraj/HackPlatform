@@ -176,11 +176,11 @@ export async function getEventBySlug(slug: string) {
   return event;
 }
 
-export async function getOrganizerEvents() {
-  const user = await requireRole(["ORGANIZER"]);
+export async function getOrganizerEvents(userId?: string) {
+  const finalUserId = userId || (await requireRole(["ORGANIZER"])).id;
   
   const events = await prisma.event.findMany({
-    where: { organizerId: user.id, deletedAt: null },
+    where: { organizerId: finalUserId, deletedAt: null },
     orderBy: { createdAt: "desc" },
     include: {
       registrations: true,

@@ -1,7 +1,15 @@
 import { getProfile } from "@/actions/profile";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { ProfileForm } from "@/components/dashboard/profile-form";
+import dynamic from "next/dynamic";
+
+const ProfileForm = dynamic(
+  () => import("@/components/dashboard/profile-form").then((mod) => mod.ProfileForm),
+  {
+    ssr: false,
+    loading: () => <div className="p-8 text-center text-neutral-500 text-xs">Loading profile form...</div>,
+  }
+);
 
 export default async function ParticipantProfilePage() {
   const session = await auth();
@@ -10,7 +18,7 @@ export default async function ParticipantProfilePage() {
     redirect("/auth/login");
   }
 
-  const profile = await getProfile();
+  const profile = await getProfile(session.user.id);
 
   return (
     <div className="space-y-6 font-sans">

@@ -9,6 +9,7 @@ import { Calendar, Award, ShieldAlert, Trophy, Users, Megaphone } from "lucide-r
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import dynamic from "next/dynamic";
+import { auth } from "@/auth";
 
 const RegisterDialog = dynamic(
   () => import("@/components/dashboard/register-dialog").then((mod) => mod.RegisterDialog),
@@ -25,6 +26,7 @@ interface EventPageProps {
 }
 
 export default async function EventPage({ params }: EventPageProps) {
+  const session = await auth();
   const { slug } = await params;
   const event = await getEventBySlug(slug);
 
@@ -41,7 +43,7 @@ export default async function EventPage({ params }: EventPageProps) {
   const customQuestions = event.customQuestions ? (typeof event.customQuestions === "string" ? JSON.parse(event.customQuestions) : event.customQuestions) : [];
 
   const [registration, leaderboard] = await Promise.all([
-    checkUserRegistration(event.id),
+    checkUserRegistration(event.id, session?.user?.id),
     getLeaderboard(event.id),
   ]);
   const isRegistered = !!registration;

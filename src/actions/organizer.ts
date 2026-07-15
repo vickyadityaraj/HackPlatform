@@ -131,15 +131,17 @@ export async function createAnnouncement(
   return announcement;
 }
 
-export async function getEventRegistrations(eventId: string) {
-  const user = await requireRole(["ORGANIZER", "SUPER_ADMIN"]);
+export async function getEventRegistrations(eventId: string, skipAuth = false) {
+  if (!skipAuth) {
+    const user = await requireRole(["ORGANIZER", "SUPER_ADMIN"]);
 
-  const event = await prisma.event.findFirst({
-    where: { id: eventId, deletedAt: null },
-  });
+    const event = await prisma.event.findFirst({
+      where: { id: eventId, deletedAt: null },
+    });
 
-  if (!event || (event.organizerId !== user.id && user.role !== "SUPER_ADMIN")) {
-    throw new Error("Unauthorized");
+    if (!event || (event.organizerId !== user.id && user.role !== "SUPER_ADMIN")) {
+      throw new Error("Unauthorized");
+    }
   }
 
   return await prisma.registration.findMany({
@@ -190,15 +192,17 @@ export async function updateRegistrationStatus(registrationId: string, status: s
   return updatedReg;
 }
 
-export async function getEventTeams(eventId: string) {
-  const user = await requireRole(["ORGANIZER", "SUPER_ADMIN"]);
+export async function getEventTeams(eventId: string, skipAuth = false) {
+  if (!skipAuth) {
+    const user = await requireRole(["ORGANIZER", "SUPER_ADMIN"]);
 
-  const event = await prisma.event.findFirst({
-    where: { id: eventId, deletedAt: null },
-  });
+    const event = await prisma.event.findFirst({
+      where: { id: eventId, deletedAt: null },
+    });
 
-  if (!event || (event.organizerId !== user.id && user.role !== "SUPER_ADMIN")) {
-    throw new Error("Unauthorized");
+    if (!event || (event.organizerId !== user.id && user.role !== "SUPER_ADMIN")) {
+      throw new Error("Unauthorized");
+    }
   }
 
   return await prisma.team.findMany({

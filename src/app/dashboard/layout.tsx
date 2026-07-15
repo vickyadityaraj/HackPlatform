@@ -10,7 +10,8 @@ import {
   Settings, 
   LogOut, 
   User as UserIcon, 
-  Menu
+  Menu,
+  Mail
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -61,6 +62,7 @@ export default async function DashboardLayout({
       ...base,
       { href: "/dashboard/participant/profile", label: "My Profile", icon: UserIcon },
       { href: "/dashboard/participant/teams", label: "My Teams", icon: Users },
+      { href: "/dashboard/participant/invites", label: "Invites", icon: Mail },
       { href: "/dashboard/participant/matchmaking", label: "Matchmaking Hub", icon: Users },
       { href: "/dashboard/participant/events", label: "Explore Events", icon: Calendar },
     ];

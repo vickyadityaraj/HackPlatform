@@ -50,8 +50,8 @@ export default async function ParticipantInvitePage({ searchParams }: InvitePage
     );
   }
 
-  // Get eligible teams
-  const eligibleTeams = await getLeaderTeamsForTargetUser(userId);
+  // Get eligible teams, passing session.user.id to bypass redundant auth calls
+  const eligibleTeams = await getLeaderTeamsForTargetUser(userId, session.user.id);
 
   const handleSendInvite = async (formData: FormData) => {
     "use server";

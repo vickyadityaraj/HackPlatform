@@ -289,11 +289,11 @@ export async function transferOwnership(teamId: string, targetUserId: string) {
   revalidatePath(`/dashboard/participant/teams`);
 }
 
-export async function getParticipantTeams() {
-  const user = await requireAuth();
+export async function getParticipantTeams(userId?: string) {
+  const finalUserId = userId || (await requireAuth()).id;
 
   return await prisma.teamMember.findMany({
-    where: { userId: user.id, team: { deletedAt: null } },
+    where: { userId: finalUserId, team: { deletedAt: null } },
     include: {
       team: {
         include: {

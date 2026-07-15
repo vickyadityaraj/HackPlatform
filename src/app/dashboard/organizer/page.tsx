@@ -2,12 +2,28 @@ import { getOrganizerEvents } from "@/actions/events";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Users, Calendar, Trophy, FileSpreadsheet } from "lucide-react";
+import { Plus, Users, Calendar, Trophy } from "lucide-react";
 import Link from "next/link";
-import { CreateEventDialog } from "@/components/dashboard/create-event-dialog";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
+import dynamic from "next/dynamic";
+
+const CreateEventDialog = dynamic(
+  () => import("@/components/dashboard/create-event-dialog").then((mod) => mod.CreateEventDialog),
+  {
+    ssr: false,
+    loading: () => <Button className="flex items-center gap-2 bg-neutral-800 text-neutral-400 font-semibold h-10 px-5" disabled>Loading...</Button>,
+  }
+);
 
 export default async function OrganizerDashboardPage() {
-  const events = await getOrganizerEvents();
+  const session = await auth();
+
+  if (!session || !session.user || (session.user.role !== "ORGANIZER" && session.user.role !== "SUPER_ADMIN")) {
+    redirect("/auth/login");
+  }
+
+  const events = await getOrganizerEvents(session.user.id);
 
   // Statistics aggregates
   const totalEvents = events.length;

@@ -5,8 +5,10 @@ import { requireRole } from "@/lib/guards";
 import { revalidatePath } from "next/cache";
 import { Role, UserStatus } from "@prisma/client";
 
-export async function getPlatformSettings() {
-  await requireRole(["SUPER_ADMIN"]);
+export async function getPlatformSettings(skipAuth = false) {
+  if (!skipAuth) {
+    await requireRole(["SUPER_ADMIN"]);
+  }
 
   let settings = await prisma.platformSettings.findUnique({
     where: { id: "single-settings-row" },
@@ -48,10 +50,13 @@ export async function updatePlatformSettings(platformFeePercentage: number, main
   return settings;
 }
 
-export async function getUsersList() {
-  await requireRole(["SUPER_ADMIN"]);
+export async function getUsersList(skipAuth = false) {
+  if (!skipAuth) {
+    await requireRole(["SUPER_ADMIN"]);
+  }
 
   return await prisma.user.findMany({
+    where: { deletedAt: null },
     orderBy: { createdAt: "desc" },
     include: {
       profile: true,
@@ -84,8 +89,10 @@ export async function updateUserStatus(userId: string, status: UserStatus, role:
   return updatedUser;
 }
 
-export async function getAuditLogs() {
-  await requireRole(["SUPER_ADMIN"]);
+export async function getAuditLogs(skipAuth = false) {
+  if (!skipAuth) {
+    await requireRole(["SUPER_ADMIN"]);
+  }
 
   return await prisma.auditLog.findMany({
     orderBy: { createdAt: "desc" },

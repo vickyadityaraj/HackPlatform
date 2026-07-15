@@ -56,10 +56,10 @@ export default async function EventControlRoom({ params }: EventControlRoomProps
     redirect("/dashboard/organizer");
   }
 
-  // Load related tables in parallel
+  // Load related tables in parallel, skipping redundant auth checks since the page has already guarded the role and organizer ID
   const [registrations, teams] = await Promise.all([
-    getEventRegistrations(id),
-    getEventTeams(id),
+    getEventRegistrations(id, true),
+    getEventTeams(id, true),
   ]);
 
   return (

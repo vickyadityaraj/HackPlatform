@@ -45,7 +45,7 @@ export default async function JudgeDashboardPage({ searchParams }: JudgeDashboar
     const ev = events.find((e) => e.id === eventId);
     if (ev) {
       selectedEventName = ev.title;
-      submissions = await getJudgeSubmissions(eventId);
+      submissions = await getJudgeSubmissions(eventId, session.user.id);
     }
   }
 
