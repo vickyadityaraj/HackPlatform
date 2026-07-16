@@ -25,7 +25,7 @@ export default function Heartbeat() {
                 const state = room.presenceState();
                 console.log('Current online users:', state);
             })
-            .subscribe(async (status) => {
+            .subscribe(async (status: string) => {
                 if (status === 'SUBSCRIBED') {
                     // Prevent multiple simultaneous checks during reconnection
                     if ((window as any).__session_checking || (window as any).__session_invalidated) return;
