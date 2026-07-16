@@ -50,6 +50,9 @@ export default auth((req) => {
     if (nextUrl.pathname.startsWith("/dashboard/judge") && userRole !== "JUDGE") {
       return NextResponse.redirect(new URL(getRedirectUrl(userRole), nextUrl));
     }
+    if (nextUrl.pathname.startsWith("/dashboard/coordinator") && userRole !== "COORDINATOR") {
+      return NextResponse.redirect(new URL(getRedirectUrl(userRole), nextUrl));
+    }
   }
 
   return NextResponse.next();
@@ -63,6 +66,8 @@ function getRedirectUrl(role?: string): string {
       return "/dashboard/organizer";
     case "JUDGE":
       return "/dashboard/judge";
+    case "COORDINATOR":
+      return "/dashboard/coordinator";
     case "PARTICIPANT":
     default:
       return "/dashboard/participant";

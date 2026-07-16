@@ -38,7 +38,7 @@ export async function registerForEvent(eventId: string, answers: any[]) {
       userId: user.id,
       eventId,
       answers: answers as any,
-      status: "APPROVED", // Default auto-approve
+      status: "PENDING", // Default to pending approval
     },
   });
 

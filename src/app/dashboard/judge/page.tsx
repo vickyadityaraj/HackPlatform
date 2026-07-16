@@ -9,6 +9,7 @@ import { Award, CheckCircle2, ChevronRight, FileText, Calendar, Star } from "luc
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import dynamic from "next/dynamic";
+import { JudgeQRScannerTrigger } from "@/components/dashboard/JudgeQRScannerTrigger";
 
 const EvaluationCenter = dynamic(
   () => import("@/components/dashboard/evaluation-center").then((mod) => mod.EvaluationCenter),
@@ -126,6 +127,9 @@ export default async function JudgeDashboardPage({ searchParams }: JudgeDashboar
                 </CardTitle>
               </CardHeader>
               <CardContent className="py-4 px-2 space-y-1.5 max-h-[500px] overflow-y-auto">
+                <div className="px-1 pb-2 border-b border-neutral-850">
+                  <JudgeQRScannerTrigger eventId={eventId} />
+                </div>
                 {submissions.length === 0 ? (
                   <p className="text-xs text-neutral-500 py-4 text-center">No submissions recorded yet.</p>
                 ) : (

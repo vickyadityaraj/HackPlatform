@@ -4,9 +4,10 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ClipboardList, Users, ShieldAlert, BadgeInfo, Calendar } from "lucide-react";
+import { ClipboardList, Users, ShieldAlert, BadgeInfo, Calendar, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import dynamic from "next/dynamic";
+import YantraYugaConsole from "./yantrayuga-console";
 
 const FormBuilder = dynamic(
   () => import("@/components/dashboard/form-builder").then((mod) => mod.FormBuilder),
@@ -56,10 +57,35 @@ export default async function EventControlRoom({ params }: EventControlRoomProps
     redirect("/dashboard/organizer");
   }
 
-  // Load related tables in parallel, skipping redundant auth checks since the page has already guarded the role and organizer ID
-  const [registrations, teams] = await Promise.all([
+  // Load related tables in parallel
+  const [registrations, teams, coordinators, mentorGroups, consoleTeams] = await Promise.all([
     getEventRegistrations(id, true),
     getEventTeams(id, true),
+    prisma.user.findMany({
+      where: { role: "COORDINATOR", deletedAt: null },
+      select: { id: true, name: true, email: true, mentorGroupId: true }
+    }),
+    prisma.mentorGroup.findMany({
+      where: { eventId: id },
+      include: { coordinators: { select: { id: true, name: true, email: true, mentorGroupId: true } } }
+    }),
+    prisma.team.findMany({
+      where: { eventId: id, deletedAt: null },
+      include: {
+        coordinator: { select: { id: true, name: true, email: true, mentorGroupId: true } },
+        submissions: {
+          where: { deletedAt: null },
+          include: {
+            evaluations: {
+              include: {
+                scores: { select: { points: true } },
+                judge: { include: { user: { select: { name: true } } } }
+              }
+            }
+          }
+        }
+      }
+    })
   ]);
 
   return (
@@ -82,7 +108,7 @@ export default async function EventControlRoom({ params }: EventControlRoomProps
 
       {/* Tabs list */}
       <Tabs defaultValue="form" className="w-full">
-        <TabsList className="bg-neutral-900 border border-neutral-800 p-1 rounded-lg flex max-w-2xl mb-8">
+        <TabsList className="bg-neutral-900 border border-neutral-800 p-1 rounded-lg flex max-w-3xl mb-8">
           <TabsTrigger
             value="form"
             className="flex-1 py-2 text-xs font-semibold rounded-md text-neutral-400 data-[state=active]:bg-neutral-850 data-[state=active]:text-neutral-100 flex items-center justify-center gap-1.5"
@@ -113,6 +139,13 @@ export default async function EventControlRoom({ params }: EventControlRoomProps
           >
             <ShieldAlert className="w-3.5 h-3.5" />
             Judges
+          </TabsTrigger>
+          <TabsTrigger
+            value="yantrayuga"
+            className="flex-1 py-2 text-xs font-semibold rounded-md text-neutral-400 data-[state=active]:bg-neutral-850 data-[state=active]:text-neutral-100 flex items-center justify-center gap-1.5"
+          >
+            <Settings className="w-3.5 h-3.5" />
+            Yantra Yugam Console
           </TabsTrigger>
         </TabsList>
 
@@ -184,6 +217,22 @@ export default async function EventControlRoom({ params }: EventControlRoomProps
         {/* Judges Tab */}
         <TabsContent value="judges">
           <JudgesClient eventId={event.id} initialJudges={event.judges as any} />
+        </TabsContent>
+
+        {/* Yantra Yugam Console Tab */}
+        <TabsContent value="yantrayuga">
+          <YantraYugaConsole
+            eventId={event.id}
+            initialEvent={{
+              reviewPhases: event.reviewPhases,
+              githubSubmissionActive: event.githubSubmissionActive,
+              shortlistCommitted: event.shortlistCommitted,
+              shortlistedTeams: event.shortlistedTeams,
+            }}
+            coordinators={coordinators as any}
+            teams={consoleTeams as any}
+            mentorGroups={mentorGroups as any}
+          />
         </TabsContent>
       </Tabs>
     </div>

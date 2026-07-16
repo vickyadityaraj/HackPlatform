@@ -113,13 +113,13 @@ function LoginForm() {
 
               {/* Email Address Input Group */}
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Email Address</Label>
+                <Label htmlFor="email" className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Email or Login ID</Label>
                 <div className="relative">
                   <Mail className="absolute left-3.5 top-[11px] h-4 w-4 text-neutral-500" />
                   <Input
                     id="email"
-                    type="email"
-                    placeholder="name@example.com"
+                    type="text"
+                    placeholder="name@example.com or team01"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10 bg-neutral-950/60 border-neutral-800 text-neutral-200 placeholder:text-neutral-600 focus-visible:ring-violet-500/40 focus-visible:border-violet-500 text-sm h-10"

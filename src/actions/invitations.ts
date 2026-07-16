@@ -18,6 +18,7 @@ export async function getLeaderTeamsForTargetUser(targetUserId: string, currentU
       userId: targetUserId,
       teamId: null,
       deletedAt: null,
+      status: "APPROVED",
     },
     select: {
       eventId: true,
@@ -77,6 +78,10 @@ export async function sendTeamInvitation(teamId: string, targetUserId: string) {
 
   if (!targetReg) {
     throw new Error("Target user is not registered for this event");
+  }
+
+  if (targetReg.status !== "APPROVED") {
+    throw new Error("Target user's registration is pending approval by the organizer");
   }
 
   if (targetReg.teamId) {
@@ -191,6 +196,10 @@ export async function respondToTeamInvitation(teamId: string, accept: boolean) {
 
     if (!reg) {
       throw new Error("You are not registered for this event");
+    }
+
+    if (reg.status !== "APPROVED") {
+      throw new Error("Your registration is pending approval by the organizer");
     }
 
     if (reg.teamId) {

@@ -18,6 +18,10 @@ export async function createTeam(name: string, eventId: string) {
     throw new Error("You must register for the event before creating a team");
   }
 
+  if (registration.status !== "APPROVED") {
+    throw new Error("Your registration is pending approval by the organizer");
+  }
+
   if (registration.teamId) {
     throw new Error("You are already in a team for this event");
   }
@@ -93,6 +97,10 @@ export async function joinTeam(inviteToken: string) {
 
   if (!registration) {
     throw new Error("You must register for the event before joining this team");
+  }
+
+  if (registration.status !== "APPROVED") {
+    throw new Error("Your registration is pending approval by the organizer");
   }
 
   if (registration.teamId) {

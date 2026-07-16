@@ -84,6 +84,20 @@ export default async function EventPage({ params }: EventPageProps) {
                   </Button>
                 }
               />
+            ) : registration.status === "PENDING" ? (
+              <div className="space-y-2 bg-amber-500/5 border border-amber-500/20 p-4 rounded-xl text-center">
+                <div className="text-xs text-amber-400 font-extrabold uppercase tracking-wider">Applied (Pending Approval)</div>
+                <p className="text-[10px] text-neutral-400 leading-normal mt-1.5">
+                  Your application is pending manual verification. The organizer will check your status and approve your registration soon.
+                </p>
+              </div>
+            ) : registration.status === "REJECTED" ? (
+              <div className="space-y-2 bg-red-500/5 border border-red-500/20 p-4 rounded-xl text-center">
+                <div className="text-xs text-red-400 font-extrabold uppercase tracking-wider">Application Rejected</div>
+                <p className="text-[10px] text-neutral-400 leading-normal mt-1.5">
+                  Your registration application has been rejected by the event organizer.
+                </p>
+              </div>
             ) : !inTeam ? (
               <div className="space-y-2">
                 <div className="text-xs text-center text-emerald-400 font-semibold">✓ Registered</div>

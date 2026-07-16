@@ -107,6 +107,23 @@ async function main() {
   });
   console.log("Created Participant Account:", partUser.email);
 
+  // 6b. Create Default Coordinator Account
+  const coordEmail = "coordinator@hackathon.com";
+  const coordPasswordHash = await bcrypt.hash("password123", 10);
+
+  const coordUser = await prisma.user.upsert({
+    where: { email: coordEmail },
+    update: {},
+    create: {
+      email: coordEmail,
+      name: "Event Coordinator",
+      password: coordPasswordHash,
+      role: Role.COORDINATOR,
+      status: UserStatus.ACTIVE,
+    },
+  });
+  console.log("Created Coordinator Account:", coordUser.email);
+
   // Create Profile for the participant
   const partProfile = await prisma.profile.upsert({
     where: { userId: partUser.id },

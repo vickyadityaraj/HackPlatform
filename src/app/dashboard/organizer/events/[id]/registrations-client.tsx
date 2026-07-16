@@ -65,15 +65,24 @@ export default function RegistrationsClient({ initialRegistrations }: Registrati
                   </Badge>
                 </div>
                 <p className="text-xs text-neutral-500">Registered: {new Date(reg.createdAt).toLocaleString()}</p>
-                {reg.answers && Object.keys(reg.answers).length > 0 && (
+                {reg.answers && (Array.isArray(reg.answers) ? reg.answers.length > 0 : Object.keys(reg.answers).length > 0) && (
                   <div className="text-xs bg-neutral-950 p-2 rounded border border-neutral-850 mt-1 space-y-1">
                     <p className="text-neutral-400 font-semibold mb-1">Custom Answers:</p>
-                    {Object.entries(reg.answers).map(([key, val]: any) => (
-                      <div key={key}>
-                        <span className="text-neutral-500 font-medium">{key}:</span>{" "}
-                        <span className="text-neutral-300">{val}</span>
-                      </div>
-                    ))}
+                    {Array.isArray(reg.answers) ? (
+                      (reg.answers as any[]).map((ans: any, idx: number) => (
+                        <div key={idx}>
+                          <span className="text-neutral-500 font-medium">Question ID ({ans.questionId}):</span>{" "}
+                          <span className="text-neutral-300">{typeof ans.answer === 'object' ? JSON.stringify(ans.answer) : String(ans.answer)}</span>
+                        </div>
+                      ))
+                    ) : (
+                      Object.entries(reg.answers).map(([key, val]: any) => (
+                        <div key={key}>
+                          <span className="text-neutral-500 font-medium">{key}:</span>{" "}
+                          <span className="text-neutral-300">{typeof val === 'object' ? JSON.stringify(val) : String(val)}</span>
+                        </div>
+                      ))
+                    )}
                   </div>
                 )}
               </div>

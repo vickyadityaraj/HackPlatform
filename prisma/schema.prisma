@@ -13,6 +13,7 @@ enum Role {
   ORGANIZER
   PARTICIPANT
   JUDGE
+  COORDINATOR
 }
 
 enum UserStatus {
@@ -85,9 +86,13 @@ model User {
   transactions  Transaction[]
   notifications Notification[]
   certificates  Certificate[]
+  mentorGroupId String?
+  mentorGroup   MentorGroup?   @relation("CoordinatorGroup", fields: [mentorGroupId], references: [id], onDelete: SetNull)
+  assignedTeams Team[]         @relation("TeamCoordinator")
 
   @@index([email])
   @@index([role])
+  @@index([mentorGroupId])
 }
 
 model Account {
@@ -198,9 +203,28 @@ model Event {
   judges            Judge[]
   announcements     Announcement[]
   certificates      Certificate[]
+  mentorGroups      MentorGroup[]
+
+  // Yantra Yugam native properties
+  reviewPhases            Json?
+  githubSubmissionActive  Boolean   @default(false)
+  shortlistCommitted      Boolean   @default(false)
+  shortlistedTeams        String[]  @default([])
 
   @@index([slug])
   @@index([organizerId])
+}
+
+model MentorGroup {
+  id           String   @id @default(uuid())
+  name         String
+  eventId      String
+  event        Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  coordinators User[]   @relation("CoordinatorGroup")
+
+  @@unique([name, eventId])
+  @@index([eventId])
 }
 
 model Registration {
@@ -208,7 +232,7 @@ model Registration {
   userId    String
   eventId   String
   teamId    String?
-  status    String    @default("APPROVED") // e.g. "APPROVED", "PENDING"
+  status    String    @default("PENDING") // e.g. "APPROVED", "PENDING"
   answers   Json?     // Custom form responses: { questionId: string, answer: string }[]
   version   Int       @default(0) // Optimistic locking
   deletedAt DateTime? // Soft delete
@@ -240,8 +264,12 @@ model Team {
   registrations  Registration[]
   submissions    Submission[]
 
+  coordinatorId   String?
+  coordinator     User?        @relation("TeamCoordinator", fields: [coordinatorId], references: [id], onDelete: SetNull)
+
   @@index([eventId])
   @@index([inviteToken])
+  @@index([coordinatorId])
 }
 
 model TeamMember {

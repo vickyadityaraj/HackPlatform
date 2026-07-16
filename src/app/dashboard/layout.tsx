@@ -14,6 +14,7 @@ import {
   Mail
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ParticipantQRTrigger } from "@/components/dashboard/ParticipantQRTrigger";
 
 export default async function DashboardLayout({
   children,
@@ -54,6 +55,13 @@ export default async function DashboardLayout({
       return [
         ...base,
         { href: "/dashboard/judge", label: "Submissions Review", icon: FileText },
+      ];
+    }
+
+    if (role === "COORDINATOR") {
+      return [
+        ...base,
+        { href: "/dashboard/coordinator", label: "My Assigned Teams", icon: Users },
       ];
     }
 
@@ -109,6 +117,12 @@ export default async function DashboardLayout({
               <p className="text-xs text-neutral-500 truncate capitalize">{role.toLowerCase().replace("_", " ")}</p>
             </div>
           </div>
+          
+          {role === "PARTICIPANT" && (
+            <div className="mb-4">
+              <ParticipantQRTrigger userId={session.user.id} name={name || "Participant"} />
+            </div>
+          )}
           
           <form
             action={async () => {

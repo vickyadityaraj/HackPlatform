@@ -219,3 +219,45 @@ export async function getJudgeSubmissions(eventId: string, userId?: string) {
     orderBy: { createdAt: "desc" },
   });
 }
+
+export async function getSubmissionIdForUser(eventId: string, identifier: string) {
+  await requireRole(["JUDGE", "SUPER_ADMIN"]);
+  
+  // Find registration
+  const registration = await prisma.registration.findFirst({
+    where: {
+      eventId,
+      deletedAt: null,
+      OR: [
+        { userId: identifier },
+        { user: { id: identifier } },
+        { user: { email: { equals: identifier, mode: 'insensitive' } } },
+        { user: { name: { contains: identifier, mode: 'insensitive' } } }
+      ]
+    },
+    include: {
+      team: {
+        include: {
+          submissions: {
+            where: { deletedAt: null },
+            take: 1
+          }
+        }
+      }
+    }
+  });
+
+  if (!registration || !registration.team) {
+    throw new Error("No active team registration found for this participant identifier.");
+  }
+
+  const submission = registration.team.submissions[0];
+  if (!submission) {
+    throw new Error(`Team "${registration.team.name}" has not submitted a project yet.`);
+  }
+
+  return {
+    submissionId: submission.id,
+    teamName: registration.team.name
+  };
+}
