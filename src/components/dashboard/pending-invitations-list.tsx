@@ -67,7 +67,7 @@ export function PendingInvitationsList({ initialInvites }: PendingInvitationsLis
   }
 
   return (
-    <div className="space-y-4 font-sans">
+    <div className="space-y-6 font-sans">
       {error && (
         <div className="p-3 rounded-lg border border-red-500/20 bg-red-500/10 text-red-400 text-xs font-semibold">
           {error}
@@ -84,35 +84,42 @@ export function PendingInvitationsList({ initialInvites }: PendingInvitationsLis
         {initialInvites.map((invite) => {
           const leader = invite.team.members[0]; // Leader filtered in query
           return (
-            <Card key={invite.teamId} className="bg-neutral-900 border-neutral-800 text-neutral-100 shadow-md hover:border-neutral-750 transition-all duration-300">
-              <CardContent className="p-5 space-y-4">
+            <Card key={invite.teamId} className="bg-neutral-900/40 border-neutral-800 text-neutral-100 shadow-xl hover:border-neutral-750 transition-all duration-300 flex flex-col justify-between overflow-hidden group">
+              <CardContent className="p-6 space-y-5">
                 <div className="flex justify-between items-start gap-4">
-                  <div className="space-y-1">
-                    <h3 className="font-bold text-neutral-100 text-base">{invite.team.name}</h3>
-                    <Badge variant="outline" className="text-[10px] border-violet-500/30 bg-violet-500/10 text-violet-300">
+                  <div className="space-y-1.5 flex-1 min-w-0">
+                    <h3 className="font-extrabold text-neutral-50 text-lg truncate group-hover:text-violet-400 transition-colors">
+                      {invite.team.name}
+                    </h3>
+                    <Badge variant="outline" className="text-[10px] border-violet-500/30 bg-violet-500/10 text-violet-300 uppercase tracking-wider font-semibold">
                       {invite.team.event.title}
                     </Badge>
                   </div>
-                  <div className="w-8 h-8 rounded-full bg-violet-500/10 flex items-center justify-center text-violet-400 text-xs font-bold">
-                    <Users className="w-4 h-4" />
+                  <div className="w-10 h-10 rounded-lg bg-violet-500/10 flex items-center justify-center text-violet-400 shrink-0 shadow-inner">
+                    <Users className="w-5 h-5" />
                   </div>
                 </div>
 
-                <div className="bg-neutral-950 p-3 rounded border border-neutral-850 space-y-1 text-xs">
-                  <p className="text-neutral-500 font-semibold uppercase tracking-wide text-[9px]">Team Leader</p>
-                  <p className="text-neutral-200 font-medium">
-                    {leader?.user.name || "Leader"}
-                  </p>
-                  <p className="text-[10px] text-neutral-500 font-mono">
-                    {leader?.user.email}
-                  </p>
+                <div className="bg-neutral-950 p-4 rounded-xl border border-neutral-850/60 space-y-2 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center text-neutral-400 text-xs font-bold shrink-0">
+                    {leader?.user.name ? leader.user.name.substring(0, 2).toUpperCase() : "LD"}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[9px] text-neutral-500 font-bold uppercase tracking-wider">Team Leader</p>
+                    <p className="text-neutral-200 font-semibold text-xs truncate">
+                      {leader?.user.name || "Leader"}
+                    </p>
+                    <p className="text-[10px] text-neutral-500 truncate font-mono">
+                      {leader?.user.email}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="flex gap-2 pt-2">
+                <div className="flex gap-3 pt-2">
                   <Button
                     disabled={loadingId !== null}
                     onClick={() => handleResponse(invite.teamId, false)}
-                    className="flex-1 border border-neutral-800 bg-neutral-950 hover:bg-neutral-900 text-neutral-400 hover:text-red-400 text-xs h-9 font-semibold flex items-center justify-center gap-1.5 transition-all"
+                    className="flex-1 border border-neutral-800 bg-neutral-950 hover:bg-neutral-900 text-neutral-450 hover:text-red-400 text-xs h-10 font-bold flex items-center justify-center gap-1.5 transition-all"
                   >
                     <X className="w-4 h-4" />
                     Decline
@@ -120,7 +127,7 @@ export function PendingInvitationsList({ initialInvites }: PendingInvitationsLis
                   <Button
                     disabled={loadingId !== null}
                     onClick={() => handleResponse(invite.teamId, true)}
-                    className="flex-1 bg-violet-600 hover:bg-violet-750 text-neutral-100 text-xs h-9 font-semibold flex items-center justify-center gap-1.5 shadow-md shadow-violet-500/10 transition-all"
+                    className="flex-1 bg-violet-600 hover:bg-violet-750 text-neutral-100 text-xs h-10 font-bold flex items-center justify-center gap-1.5 shadow-lg shadow-violet-500/15 transition-all"
                   >
                     <Check className="w-4 h-4" />
                     Accept Invite

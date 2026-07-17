@@ -4,13 +4,14 @@ import { useState } from "react";
 import { updateRegistrationStatus } from "@/actions/organizer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check, X, Loader2 } from "lucide-react";
+import { Check, X, Loader2, Image as ImageIcon } from "lucide-react";
 
 interface Registration {
   id: string;
   status: string;
   createdAt: Date;
   answers: any;
+  paymentScreenshotUrl?: string | null;
   user: {
     name: string | null;
     email: string;
@@ -83,6 +84,24 @@ export default function RegistrationsClient({ initialRegistrations }: Registrati
                         </div>
                       ))
                     )}
+                  </div>
+                )}
+
+                {reg.paymentScreenshotUrl && (
+                  <div className="text-xs bg-neutral-950 p-3 rounded-xl border border-neutral-850 mt-2 space-y-2 max-w-sm">
+                    <p className="text-violet-400 font-bold flex items-center gap-1.5">
+                      <ImageIcon className="w-4 h-4" />
+                      Payment Proof Screenshot:
+                    </p>
+                    <div className="relative group overflow-hidden rounded border border-neutral-800 bg-neutral-900 aspect-video max-h-[140px]">
+                      <img
+                        src={reg.paymentScreenshotUrl}
+                        alt="Payment screenshot"
+                        className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
+                        onClick={() => window.open(reg.paymentScreenshotUrl || "", "_blank")}
+                      />
+                    </div>
+                    <p className="text-[10px] text-neutral-500 italic">Click image to view full screen in a new tab</p>
                   </div>
                 )}
               </div>

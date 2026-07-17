@@ -12,6 +12,7 @@ const eventSchema = z.object({
   slug: z.string().min(3, "Slug must be at least 3 characters").regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens"),
   description: z.string().min(10, "Description must be at least 10 characters"),
   bannerUrl: z.string().url().optional().nullable().or(z.literal("")),
+  paymentQrUrl: z.string().url().optional().nullable().or(z.literal("")),
   registrationStart: z.coerce.date(),
   registrationEnd: z.coerce.date(),
   eventStart: z.coerce.date(),
@@ -41,6 +42,7 @@ export async function createEvent(formData: z.infer<typeof eventSchema>) {
     data: {
       ...validated,
       bannerUrl: validated.bannerUrl || null,
+      paymentQrUrl: validated.paymentQrUrl || null,
       faq: validated.faq ? (validated.faq as any) : null,
       prizes: validated.prizes ? (validated.prizes as any) : null,
       sponsors: validated.sponsors ? (validated.sponsors as any) : null,
@@ -84,6 +86,7 @@ export async function updateEvent(
     data: {
       ...validated,
       bannerUrl: validated.bannerUrl || null,
+      paymentQrUrl: validated.paymentQrUrl || null,
       faq: validated.faq ? (validated.faq as any) : null,
       prizes: validated.prizes ? (validated.prizes as any) : null,
       sponsors: validated.sponsors ? (validated.sponsors as any) : null,

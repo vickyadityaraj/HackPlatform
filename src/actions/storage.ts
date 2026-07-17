@@ -39,7 +39,7 @@ export async function uploadFile(formData: FormData) {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${serviceKey}`,
-      "apikey": anonKey,
+      "apikey": serviceKey,
       "Content-Type": file.type || "application/octet-stream",
     },
     body: buffer,

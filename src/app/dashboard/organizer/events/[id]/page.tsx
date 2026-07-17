@@ -1,11 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { getEventRegistrations, getEventTeams } from "@/actions/organizer";
+import { publishEvent } from "@/actions/events";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClipboardList, Users, ShieldAlert, BadgeInfo, Calendar, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import dynamic from "next/dynamic";
 import YantraYugaConsole from "./yantrayuga-console";
 
@@ -104,6 +106,17 @@ export default async function EventControlRoom({ params }: EventControlRoomProps
             Hackathon Dates: {new Date(event.eventStart).toLocaleDateString()} - {new Date(event.eventEnd).toLocaleDateString()}
           </p>
         </div>
+
+        {event.status === "DRAFT" && (
+          <form action={async () => {
+            "use server";
+            await publishEvent(event.id);
+          }}>
+            <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-neutral-100 font-semibold text-xs h-9 px-4 shadow-md shadow-emerald-500/10 transition-all duration-200">
+              Publish Event
+            </Button>
+          </form>
+        )}
       </div>
 
       {/* Tabs list */}

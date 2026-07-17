@@ -41,3 +41,42 @@ export async function sendOtpEmail(email: string, otp: string) {
 
   await transporter.sendMail(mailOptions);
 }
+
+export async function sendContactRequestEmail(
+  toEmail: string,
+  toName: string,
+  fromName: string,
+  fromEmail: string,
+  eventTitle: string,
+  message: string
+) {
+  const mailOptions = {
+    from: `"HackPlatform Matchmaking" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+    to: toEmail,
+    subject: `New Team Invitation Request for ${eventTitle}`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #e5e7eb; border-radius: 12px; background-color: #ffffff; color: #1f2937;">
+        <h2 style="color: #6366f1; text-align: center; margin-bottom: 20px;">HackPlatform Team Invitation</h2>
+        <p style="font-size: 15px;">Hello <strong>${toName}</strong>,</p>
+        <p style="font-size: 14px; line-height: 1.5;">
+          <strong>${fromName}</strong> (${fromEmail}) has found your profile on the interested candidate list for the event <strong>${eventTitle}</strong> and would like to invite you to team up!
+        </p>
+        
+        <div style="padding: 15px; background-color: #f9fafb; border-left: 4px solid #6366f1; border-radius: 4px; margin: 20px 0; font-style: italic; font-size: 14px; line-height: 1.6; color: #374151;">
+          "${message}"
+        </div>
+
+        <p style="font-size: 14px; line-height: 1.5;">
+          You can reply directly to this email or contact them at <a href="mailto:${fromEmail}">${fromEmail}</a> to discuss and coordinate team formation.
+        </p>
+        
+        <hr style="border: 0; border-top: 1px solid #f3f4f6; margin: 20px 0;" />
+        <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+          This request was triggered via the HackPlatform Developer Matchmaking system.
+        </p>
+      </div>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+}

@@ -1,6 +1,8 @@
 import { getEventBySlug } from "@/actions/events";
 import { checkUserRegistration } from "@/actions/registration";
 import { getLeaderboard } from "@/actions/evaluation";
+import { getInterestedUsers } from "@/actions/matchmaking";
+import { prisma } from "@/lib/prisma";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +18,14 @@ const RegisterDialog = dynamic(
   {
     ssr: false,
     loading: () => <Button className="w-full bg-violet-600 hover:bg-violet-750 text-neutral-100 font-semibold h-11" disabled>Registering...</Button>
+  }
+);
+
+const EventMatchmaking = dynamic(
+  () => import("@/components/dashboard/event-matchmaking").then((mod) => mod.EventMatchmaking),
+  {
+    ssr: false,
+    loading: () => <div className="p-8 text-center text-neutral-500 text-xs">Loading matchmaking...</div>
   }
 );
 
@@ -42,9 +52,14 @@ export default async function EventPage({ params }: EventPageProps) {
   const timeline = event.timeline ? (typeof event.timeline === "string" ? JSON.parse(event.timeline) : event.timeline) : [];
   const customQuestions = event.customQuestions ? (typeof event.customQuestions === "string" ? JSON.parse(event.customQuestions) : event.customQuestions) : [];
 
-  const [registration, leaderboard] = await Promise.all([
+  const [registration, leaderboard, isInterested, interestedCount, interestedUsers] = await Promise.all([
     checkUserRegistration(event.id, session?.user?.id),
     getLeaderboard(event.id),
+    session?.user?.id ? prisma.eventInterest.findUnique({
+      where: { eventId_userId: { eventId: event.id, userId: session.user.id } }
+    }).then(Boolean) : Promise.resolve(false),
+    prisma.eventInterest.count({ where: { eventId: event.id } }),
+    getInterestedUsers(event.id),
   ]);
   const isRegistered = !!registration;
   const inTeam = !!registration?.teamId;
@@ -78,6 +93,7 @@ export default async function EventPage({ params }: EventPageProps) {
               <RegisterDialog
                 eventId={event.id}
                 customQuestions={customQuestions}
+                paymentQrUrl={event.paymentQrUrl}
                 trigger={
                   <Button className="w-full bg-violet-600 hover:bg-violet-750 text-neutral-100 font-semibold h-11 shadow-lg shadow-violet-500/15">
                     Register for Event
@@ -101,7 +117,7 @@ export default async function EventPage({ params }: EventPageProps) {
             ) : !inTeam ? (
               <div className="space-y-2">
                 <div className="text-xs text-center text-emerald-400 font-semibold">✓ Registered</div>
-                <Link href="/dashboard/participant">
+                <Link href="/dashboard/participant/teams">
                   <Button className="w-full bg-neutral-800 hover:bg-neutral-700 text-neutral-100 border border-neutral-750 text-xs h-10">
                     Form or Join Team
                   </Button>
@@ -110,7 +126,7 @@ export default async function EventPage({ params }: EventPageProps) {
             ) : (
               <div className="space-y-2">
                 <div className="text-xs text-center text-emerald-400 font-semibold">✓ Team Joined: {registration.team?.name}</div>
-                <Link href="/dashboard/participant">
+                <Link href="/dashboard/participant/teams">
                   <Button className="w-full bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 border border-violet-500/30 text-xs h-10">
                     Go to Workspace
                   </Button>
@@ -124,13 +140,14 @@ export default async function EventPage({ params }: EventPageProps) {
       {/* Tabs panels */}
       <div className="max-w-6xl">
         <Tabs defaultValue="overview" className="space-y-8">
-          <TabsList className="bg-neutral-900 border border-neutral-800 p-1 rounded-lg flex flex-wrap max-w-2xl">
+          <TabsList className="bg-neutral-900 border border-neutral-800 p-1 rounded-lg flex flex-wrap max-w-4xl">
             <TabsTrigger value="overview" className="flex-1 py-2 text-xs font-semibold rounded-md text-neutral-400 data-[state=active]:bg-neutral-850 data-[state=active]:text-neutral-100">Overview</TabsTrigger>
             <TabsTrigger value="rules" className="flex-1 py-2 text-xs font-semibold rounded-md text-neutral-400 data-[state=active]:bg-neutral-850 data-[state=active]:text-neutral-100">Rules</TabsTrigger>
             <TabsTrigger value="schedule" className="flex-1 py-2 text-xs font-semibold rounded-md text-neutral-400 data-[state=active]:bg-neutral-850 data-[state=active]:text-neutral-100">Schedule</TabsTrigger>
             <TabsTrigger value="faq" className="flex-1 py-2 text-xs font-semibold rounded-md text-neutral-400 data-[state=active]:bg-neutral-850 data-[state=active]:text-neutral-100">FAQ</TabsTrigger>
             <TabsTrigger value="leaderboard" className="flex-1 py-2 text-xs font-semibold rounded-md text-neutral-400 data-[state=active]:bg-neutral-850 data-[state=active]:text-neutral-100">Leaderboard</TabsTrigger>
             <TabsTrigger value="announcements" className="flex-1 py-2 text-xs font-semibold rounded-md text-neutral-400 data-[state=active]:bg-neutral-850 data-[state=active]:text-neutral-100">Announcements</TabsTrigger>
+            <TabsTrigger value="matchmaking" className="flex-1 py-2 text-xs font-semibold rounded-md text-neutral-400 data-[state=active]:bg-neutral-850 data-[state=active]:text-neutral-100">Find Teams ({interestedCount})</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab Content */}
@@ -358,6 +375,20 @@ export default async function EventPage({ params }: EventPageProps) {
                     ))}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Matchmaking / Find Teams Tab Content */}
+          <TabsContent value="matchmaking">
+            <Card className="bg-neutral-900 border-neutral-800 text-neutral-100">
+              <CardContent className="py-6 space-y-4">
+                <EventMatchmaking
+                  eventId={event.id}
+                  eventTitle={event.title}
+                  initialIsInterested={isInterested}
+                  interestedUsers={interestedUsers as any}
+                />
               </CardContent>
             </Card>
           </TabsContent>

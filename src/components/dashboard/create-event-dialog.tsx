@@ -18,6 +18,7 @@ const eventFormSchema = z.object({
   slug: z.string().min(3, "Slug must be at least 3 characters").regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens"),
   description: z.string().min(10, "Description must be at least 10 characters"),
   bannerUrl: z.string().optional().nullable().or(z.literal("")),
+  paymentQrUrl: z.string().optional().nullable().or(z.literal("")),
   registrationStart: z.string().min(1, "Required"),
   registrationEnd: z.string().min(1, "Required"),
   eventStart: z.string().min(1, "Required"),
@@ -40,6 +41,7 @@ export function CreateEventDialog({ trigger }: { trigger: React.ReactElement }) 
       slug: "",
       description: "",
       bannerUrl: "",
+      paymentQrUrl: "",
       registrationStart: "",
       registrationEnd: "",
       eventStart: "",
@@ -49,7 +51,9 @@ export function CreateEventDialog({ trigger }: { trigger: React.ReactElement }) 
   });
 
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [uploadingQr, setUploadingQr] = useState(false);
   const bannerInputRef = useRef<HTMLInputElement>(null);
+  const qrInputRef = useRef<HTMLInputElement>(null);
 
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -70,6 +74,25 @@ export function CreateEventDialog({ trigger }: { trigger: React.ReactElement }) 
     }
   };
 
+  const handleQrUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingQr(true);
+    setError(null);
+    try {
+      const data = new FormData();
+      data.append("file", file);
+      data.append("folder", "payment-qrs");
+      const res = await uploadFile(data);
+      form.setValue("paymentQrUrl", res.url);
+    } catch (err: any) {
+      setError(err.message || "Failed to upload payment QR code");
+    } finally {
+      setUploadingQr(false);
+    }
+  };
+
   const onSubmit = async (values: EventFormValues) => {
     setLoading(true);
     setError(null);
@@ -77,6 +100,7 @@ export function CreateEventDialog({ trigger }: { trigger: React.ReactElement }) 
       await createEvent({
         ...values,
         bannerUrl: values.bannerUrl || null,
+        paymentQrUrl: values.paymentQrUrl || null,
         registrationStart: new Date(values.registrationStart),
         registrationEnd: new Date(values.registrationEnd),
         eventStart: new Date(values.eventStart),
@@ -171,6 +195,61 @@ export function CreateEventDialog({ trigger }: { trigger: React.ReactElement }) 
               type="file"
               ref={bannerInputRef}
               onChange={handleBannerUpload}
+              accept="image/*"
+              className="hidden"
+            />
+          </div>
+
+          {/* Payment QR Photo Uploader */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-neutral-400">Payment QR Code (Optional)</Label>
+            <div className="relative border border-neutral-800 rounded-lg bg-neutral-950 overflow-hidden min-h-[100px] flex items-center justify-center">
+              {form.watch("paymentQrUrl") ? (
+                <div className="p-4 w-full flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <ImageIcon className="w-5 h-5 text-violet-400 shrink-0" />
+                    <span className="text-xs text-neutral-300 font-semibold truncate max-w-[250px]">Payment QR Uploaded</span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => form.setValue("paymentQrUrl", "")}
+                    className="text-red-400 hover:text-red-300 hover:bg-red-950/20 h-8"
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center p-4 text-center">
+                  <ImageIcon className="w-6 h-6 text-neutral-600 mb-1" />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={uploadingQr}
+                    onClick={() => qrInputRef.current?.click()}
+                    className="border-neutral-850 bg-neutral-900 text-neutral-300 hover:bg-neutral-800 text-[11px] h-8"
+                  >
+                    {uploadingQr ? (
+                      <>
+                        <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
+                        Uploading QR...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-3 h-3 mr-1.5" />
+                        Upload Payment QR
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+            <input
+              type="file"
+              ref={qrInputRef}
+              onChange={handleQrUpload}
               accept="image/*"
               className="hidden"
             />

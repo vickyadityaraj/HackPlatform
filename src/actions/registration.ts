@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/guards";
 import { revalidatePath } from "next/cache";
 
-export async function registerForEvent(eventId: string, answers: any[]) {
+export async function registerForEvent(eventId: string, answers: any[], paymentScreenshotUrl?: string | null) {
   const user = await requireAuth();
 
   // 1. Get Event and check dates
@@ -39,6 +39,7 @@ export async function registerForEvent(eventId: string, answers: any[]) {
       eventId,
       answers: answers as any,
       status: "PENDING", // Default to pending approval
+      paymentScreenshotUrl: paymentScreenshotUrl || null,
     },
   });
 

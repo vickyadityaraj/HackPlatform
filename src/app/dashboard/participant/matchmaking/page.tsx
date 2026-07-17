@@ -112,16 +112,28 @@ export default async function MatchmakingPage({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {profiles.map((profile) => (
-            <Card key={profile.id} className="bg-neutral-900 border-neutral-800 text-neutral-100 shadow-md hover:border-neutral-700 transition-all duration-300 flex flex-col justify-between overflow-hidden">
+            <Card key={profile.id} className="bg-neutral-900 border-neutral-800 text-neutral-100 shadow-lg hover:border-neutral-750 transition-all duration-300 flex flex-col justify-between overflow-hidden group">
               <CardContent className="p-5 flex-1 flex flex-col justify-between space-y-4">
                 <div className="space-y-3">
                   {/* Name and Header */}
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-violet-600/10 border border-violet-500/20 flex items-center justify-center text-violet-400 font-bold uppercase text-sm">
-                      {profile.user.name ? profile.user.name.substring(0, 2) : "DV"}
+                    <div className="w-10 h-10 rounded-full bg-violet-600/10 border border-violet-500/20 flex items-center justify-center overflow-hidden shrink-0">
+                      {profile.avatarUrl ? (
+                        <img
+                          src={profile.avatarUrl}
+                          alt={profile.user.name || "Avatar"}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-violet-400 font-bold uppercase text-sm">
+                          {profile.user.name ? profile.user.name.substring(0, 2) : "DV"}
+                        </span>
+                      )}
                     </div>
-                    <div className="min-w-0">
-                      <h4 className="font-bold text-neutral-50 truncate text-sm">{profile.user.name || "Developer"}</h4>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-bold text-neutral-50 truncate text-sm group-hover:text-violet-400 transition-colors">
+                        {profile.user.name || "Developer"}
+                      </h4>
                       <p className="text-[10px] text-neutral-500 truncate">{profile.user.email}</p>
                     </div>
                   </div>
@@ -161,7 +173,7 @@ export default async function MatchmakingPage({
                       <span className="text-[10px] text-neutral-600">No skill tags configured</span>
                     ) : (
                       profile.skills.map((skill) => (
-                        <Badge key={skill} variant="outline" className="text-[9px] h-4.5 px-1.5 bg-neutral-950 border-neutral-800 text-neutral-400 capitalize">
+                        <Badge key={skill} variant="outline" className="text-[9px] h-4.5 px-1.5 bg-neutral-950 border-neutral-800 text-neutral-455 capitalize">
                           {skill}
                         </Badge>
                       ))

@@ -144,288 +144,362 @@ export function ProfileForm({ initialProfile }: ProfileFormProps) {
   };
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 font-sans">
-      <Card className="bg-neutral-900 border-neutral-800 text-neutral-100">
-        <CardHeader className="border-b border-neutral-850/50">
-          <CardTitle className="text-xl font-bold">Personal Profile Setup</CardTitle>
-        </CardHeader>
-        <CardContent className="py-6 space-y-6">
-          {error && (
-            <div className="p-3 rounded-lg border border-red-500/20 bg-red-500/10 text-red-400 text-xs font-semibold">
-              {error}
-            </div>
-          )}
+    <form onSubmit={form.handleSubmit(onSubmit)} className="font-sans space-y-6">
+      {error && (
+        <div className="p-3 rounded-lg border border-red-500/20 bg-red-500/10 text-red-400 text-xs font-semibold">
+          {error}
+        </div>
+      )}
 
-          {success && (
-            <div className="p-3 rounded-lg border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 text-xs font-semibold flex items-center gap-2">
-              <Check className="w-4 h-4" />
-              Profile updated successfully!
-            </div>
-          )}
+      {success && (
+        <div className="p-3 rounded-lg border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 text-xs font-semibold flex items-center gap-2">
+          <Check className="w-4 h-4" />
+          Profile updated successfully!
+        </div>
+      )}
 
-          {/* Profile Picture (Avatar) Uploader */}
-          <div className="flex flex-col sm:flex-row items-center gap-5 pb-5 border-b border-neutral-850/40">
-            <div className="relative h-20 w-20 rounded-full bg-neutral-950 border border-neutral-800 flex items-center justify-center overflow-hidden group">
-              {form.watch("avatarUrl") ? (
-                <img
-                  src={form.watch("avatarUrl") || ""}
-                  alt="Avatar Preview"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <UserIcon className="w-8 h-8 text-neutral-500" />
-              )}
-              {uploadingAvatar && (
-                <div className="absolute inset-0 bg-neutral-950/75 flex items-center justify-center">
-                  <Loader2 className="w-5 h-5 text-violet-500 animate-spin" />
-                </div>
-              )}
-            </div>
-            <div className="space-y-1.5 text-center sm:text-left">
-              <Label className="text-sm font-bold text-neutral-200">Profile Image</Label>
-              <p className="text-xs text-neutral-500">Allowed formats: PNG, JPG or WEBP. Max 2MB.</p>
-              <div className="flex gap-2 justify-center sm:justify-start">
-                <input
-                  type="file"
-                  ref={avatarInputRef}
-                  onChange={handleAvatarUpload}
-                  accept="image/*"
-                  className="hidden"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={uploadingAvatar}
-                  onClick={() => avatarInputRef.current?.click()}
-                  className="border-neutral-800 bg-neutral-950 text-neutral-300 hover:bg-neutral-850"
-                >
-                  <Upload className="w-3.5 h-3.5 mr-1.5" />
-                  Upload Image
-                </Button>
-                {form.watch("avatarUrl") && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => form.setValue("avatarUrl", "")}
-                    className="text-red-400 hover:text-red-300 hover:bg-red-950/20"
-                  >
-                    Remove
-                  </Button>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        {/* Left Column: Live Preview Card */}
+        <div className="space-y-6">
+          <Card className="bg-neutral-900 border-neutral-800 text-neutral-100 shadow-xl overflow-hidden">
+            <div className="p-6 text-center space-y-4 border-b border-neutral-850/60 relative">
+              {/* Avatar Preview */}
+              <div className="mx-auto relative h-24 w-24 rounded-full bg-neutral-950 border-2 border-violet-500/30 flex items-center justify-center overflow-hidden">
+                {form.watch("avatarUrl") ? (
+                  <img
+                    src={form.watch("avatarUrl") || ""}
+                    alt="Avatar"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <UserIcon className="w-10 h-10 text-neutral-500" />
+                )}
+                {uploadingAvatar && (
+                  <div className="absolute inset-0 bg-neutral-950/75 flex items-center justify-center">
+                    <Loader2 className="w-5 h-5 text-violet-500 animate-spin" />
+                  </div>
                 )}
               </div>
-            </div>
-          </div>
 
-          {/* Bio Description */}
-          <div className="space-y-1.5">
-            <Label htmlFor="bio">Professional Bio</Label>
-            <textarea
-              id="bio"
-              rows={4}
-              placeholder="Tell other developers about your journey, interests, or project goals..."
-              className="w-full rounded-md bg-neutral-950 border border-neutral-800 focus:border-violet-500 text-neutral-100 text-sm p-3 focus:outline-none focus:ring-1 focus:ring-violet-500"
-              {...form.register("bio")}
-            />
-            {form.formState.errors.bio && (
-              <p className="text-xs text-red-500">{form.formState.errors.bio.message}</p>
-            )}
-          </div>
+              {/* Basic Info */}
+              <div className="space-y-1">
+                <h3 className="font-bold text-neutral-100 text-lg">
+                  {form.watch("college") ? "Developer" : "Coder"}
+                </h3>
+                <p className="text-xs text-neutral-500 truncate">{form.watch("college") || "No college specified"}</p>
+              </div>
 
-          {/* Academic & Geographic details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-1.5">
-              <Label htmlFor="college">College / University</Label>
-              <Input
-                id="college"
-                placeholder="e.g. Stanford University"
-                className="bg-neutral-950 border-neutral-800 focus:border-violet-500 text-neutral-100"
-                {...form.register("college")}
-              />
+              {/* Experience Badge */}
+              {form.watch("experience") && (
+                <Badge className="bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs">
+                  {form.watch("experience")}
+                </Badge>
+              )}
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="country">Country</Label>
-              <Input
-                id="country"
-                placeholder="e.g. United States"
-                className="bg-neutral-950 border-neutral-800 focus:border-violet-500 text-neutral-100"
-                {...form.register("country")}
-              />
-            </div>
-          </div>
+            <CardContent className="p-6 space-y-5 text-xs">
+              {/* Bio snippet */}
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">About</span>
+                <p className="text-neutral-400 leading-relaxed italic">
+                  {form.watch("bio") || '"Write a bio to share your developer journey..."'}
+                </p>
+              </div>
 
-          {/* Experience level */}
-          <div className="space-y-1.5">
-            <Label htmlFor="experience">Experience Level</Label>
-            <select
-              id="experience"
-              className="w-full h-10 rounded-md bg-neutral-950 border border-neutral-800 text-neutral-100 text-sm px-3 focus:outline-none focus:ring-1 focus:ring-violet-500"
-              {...form.register("experience")}
-            >
-              <option value="">Select experience level...</option>
-              <option value="Beginner (0-1 yrs)">Beginner (0-1 yrs)</option>
-              <option value="Intermediate (2-4 yrs)">Intermediate (2-4 yrs)</option>
-              <option value="Advanced (5+ yrs)">Advanced (5+ yrs)</option>
-            </select>
-          </div>
+              {/* Country */}
+              {form.watch("country") && (
+                <div className="flex items-center gap-2 text-neutral-450">
+                  <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider min-w-[60px]">Location:</span>
+                  <span className="text-neutral-350">{form.watch("country")}</span>
+                </div>
+              )}
 
-          {/* Social and Portfolio links */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-neutral-850/40">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Resume PDF</Label>
-              <div className="flex flex-col gap-2 p-3 bg-neutral-950 border border-neutral-800 rounded-lg">
-                <input
-                  type="file"
-                  ref={resumeInputRef}
-                  onChange={handleResumeUpload}
-                  accept="application/pdf"
-                  className="hidden"
-                />
-                
-                {form.watch("resumeUrl") ? (
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 text-violet-400">
-                      <FileText className="w-5 h-5 shrink-0" />
-                      <a
-                        href={form.watch("resumeUrl") || ""}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs font-medium hover:underline truncate max-w-[200px]"
-                      >
-                        {form.watch("resumeUrl")?.split("/").pop() || "Uploaded Resume.pdf"}
-                      </a>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="xs"
-                      onClick={() => form.setValue("resumeUrl", "")}
-                      className="text-red-400 hover:text-red-300 hover:bg-red-950/20"
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-4 text-center">
-                    <FileText className="w-8 h-8 text-neutral-600 mb-2" />
-                    <p className="text-xs text-neutral-400 mb-2">No PDF resume uploaded yet</p>
+              {/* Skills Tags */}
+              <div className="space-y-2 pt-2 border-t border-neutral-850/40">
+                <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block">Skills & Tags</span>
+                <div className="flex flex-wrap gap-1">
+                  {skills.length === 0 ? (
+                    <span className="text-[10px] text-neutral-600">No skill tags configured</span>
+                  ) : (
+                    skills.map((tag) => (
+                      <Badge key={tag} className="bg-neutral-950 border border-neutral-800 text-neutral-400 capitalize text-[10px]">
+                        {tag}
+                      </Badge>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Resume display */}
+              {form.watch("resumeUrl") && (
+                <div className="pt-2 border-t border-neutral-850/40">
+                  <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block mb-2">Resume PDF</span>
+                  <a
+                    href={form.watch("resumeUrl") || "#"}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-2 text-violet-400 hover:text-violet-300 font-semibold"
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>View Uploaded Resume</span>
+                  </a>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Columns: Editor Card */}
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="bg-neutral-900 border-neutral-800 text-neutral-100 shadow-xl">
+            <CardHeader className="border-b border-neutral-850/60">
+              <CardTitle className="text-lg font-bold">Edit Profile Details</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              {/* Image upload row */}
+              <div className="flex flex-col sm:flex-row items-center gap-5 pb-5 border-b border-neutral-850/40">
+                <div className="space-y-1.5 text-center sm:text-left flex-1">
+                  <Label className="text-sm font-bold text-neutral-200">Profile Image</Label>
+                  <p className="text-xs text-neutral-500">Upload a square image. Allowed: PNG, JPG, WEBP. Max 2MB.</p>
+                  <div className="flex gap-2 pt-2 justify-center sm:justify-start">
+                    <input
+                      type="file"
+                      ref={avatarInputRef}
+                      onChange={handleAvatarUpload}
+                      accept="image/*"
+                      className="hidden"
+                    />
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
-                      disabled={uploadingResume}
-                      onClick={() => resumeInputRef.current?.click()}
-                      className="border-neutral-800 bg-neutral-900 text-neutral-300 hover:bg-neutral-800"
+                      disabled={uploadingAvatar}
+                      onClick={() => avatarInputRef.current?.click()}
+                      className="border-neutral-800 bg-neutral-950 text-neutral-300 hover:bg-neutral-850"
                     >
-                      {uploadingResume ? (
-                        <>
-                          <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                          Uploading...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-3.5 h-3.5 mr-1.5" />
-                          Upload Resume PDF
-                        </>
-                      )}
+                      <Upload className="w-3.5 h-3.5 mr-1.5" />
+                      Upload Avatar
                     </Button>
+                    {form.watch("avatarUrl") && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => form.setValue("avatarUrl", "")}
+                        className="text-red-400 hover:text-red-300 hover:bg-red-950/20"
+                      >
+                        Remove
+                      </Button>
+                    )}
                   </div>
+                </div>
+              </div>
+
+              {/* Bio Description */}
+              <div className="space-y-1.5">
+                <Label htmlFor="bio">Professional Bio</Label>
+                <textarea
+                  id="bio"
+                  rows={4}
+                  placeholder="Tell other developers about your journey, interests, or project goals..."
+                  className="w-full rounded-md bg-neutral-950 border border-neutral-800 focus:border-violet-500 text-neutral-100 text-sm p-3 focus:outline-none focus:ring-1 focus:ring-violet-500"
+                  {...form.register("bio")}
+                />
+                {form.formState.errors.bio && (
+                  <p className="text-xs text-red-500">{form.formState.errors.bio.message}</p>
                 )}
               </div>
-              {form.formState.errors.resumeUrl && (
-                <p className="text-xs text-red-500">{form.formState.errors.resumeUrl.message}</p>
-              )}
-            </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="portfolioUrl">Portfolio Website</Label>
-              <Input
-                id="portfolioUrl"
-                placeholder="https://mywebsite.dev"
-                className="bg-neutral-950 border-neutral-800 focus:border-violet-500 text-neutral-100 text-xs"
-                {...form.register("portfolioUrl")}
-              />
-              {form.formState.errors.portfolioUrl && (
-                <p className="text-xs text-red-500">{form.formState.errors.portfolioUrl.message}</p>
-              )}
-            </div>
+              {/* Academic & Geographic details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-1.5">
+                  <Label htmlFor="college">College / University</Label>
+                  <Input
+                    id="college"
+                    placeholder="e.g. Stanford University"
+                    className="bg-neutral-950 border-neutral-800 focus:border-violet-500 text-neutral-100"
+                    {...form.register("college")}
+                  />
+                </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="githubUrl">GitHub Profile URL</Label>
-              <Input
-                id="githubUrl"
-                placeholder="https://github.com/myusername"
-                className="bg-neutral-950 border-neutral-800 focus:border-violet-500 text-neutral-100 text-xs"
-                {...form.register("githubUrl")}
-              />
-              {form.formState.errors.githubUrl && (
-                <p className="text-xs text-red-500">{form.formState.errors.githubUrl.message}</p>
-              )}
-            </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="country">Country</Label>
+                  <Input
+                    id="country"
+                    placeholder="e.g. United States"
+                    className="bg-neutral-950 border-neutral-800 focus:border-violet-500 text-neutral-100"
+                    {...form.register("country")}
+                  />
+                </div>
+              </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="linkedInUrl">LinkedIn Profile URL</Label>
-              <Input
-                id="linkedInUrl"
-                placeholder="https://linkedin.com/in/myusername"
-                className="bg-neutral-950 border-neutral-800 focus:border-violet-500 text-neutral-100 text-xs"
-                {...form.register("linkedInUrl")}
-              />
-              {form.formState.errors.linkedInUrl && (
-                <p className="text-xs text-red-500">{form.formState.errors.linkedInUrl.message}</p>
-              )}
-            </div>
-          </div>
+              {/* Experience level */}
+              <div className="space-y-1.5">
+                <Label htmlFor="experience">Experience Level</Label>
+                <select
+                  id="experience"
+                  className="w-full h-10 rounded-md bg-neutral-950 border border-neutral-800 text-neutral-100 text-sm px-3 focus:outline-none focus:ring-1 focus:ring-violet-500"
+                  {...form.register("experience")}
+                >
+                  <option value="">Select experience level...</option>
+                  <option value="Beginner (0-1 yrs)">Beginner (0-1 yrs)</option>
+                  <option value="Intermediate (2-4 yrs)">Intermediate (2-4 yrs)</option>
+                  <option value="Advanced (5+ yrs)">Advanced (5+ yrs)</option>
+                </select>
+              </div>
 
-          {/* Skills Tag Area */}
-          <div className="space-y-3 pt-4 border-t border-neutral-850/40">
-            <Label>Skills & Languages</Label>
-            <div className="flex gap-2">
-              <Input
-                value={skillInput}
-                onChange={(e) => setSkillInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    addSkill();
-                  }
-                }}
-                placeholder="e.g. typescript, nextjs, postgresql (Press enter to add)"
-                className="bg-neutral-950 border-neutral-800 focus:border-violet-500 text-neutral-100"
-              />
-              <Button type="button" onClick={addSkill} className="bg-neutral-800 border border-neutral-700 hover:bg-neutral-700 text-neutral-200">
-                <Plus className="w-5 h-5" />
-              </Button>
-            </div>
+              {/* Social and Portfolio links */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-neutral-850/40">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Resume PDF</Label>
+                  <div className="flex flex-col gap-2 p-3 bg-neutral-950 border border-neutral-800 rounded-lg">
+                    <input
+                      type="file"
+                      ref={resumeInputRef}
+                      onChange={handleResumeUpload}
+                      accept="application/pdf"
+                      className="hidden"
+                    />
+                    
+                    {form.watch("resumeUrl") ? (
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 text-violet-400">
+                          <FileText className="w-5 h-5 shrink-0" />
+                          <span className="text-xs font-medium truncate max-w-[200px]">
+                            {form.watch("resumeUrl")?.split("/").pop() || "Uploaded Resume.pdf"}
+                          </span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => form.setValue("resumeUrl", "")}
+                          className="text-red-400 hover:text-red-300 hover:bg-red-950/20 h-8 px-2"
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-4 text-center">
+                        <FileText className="w-8 h-8 text-neutral-600 mb-2" />
+                        <p className="text-xs text-neutral-400 mb-2">No PDF resume uploaded yet</p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={uploadingResume}
+                          onClick={() => resumeInputRef.current?.click()}
+                          className="border-neutral-800 bg-neutral-900 text-neutral-300 hover:bg-neutral-800"
+                        >
+                          {uploadingResume ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-3.5 h-3.5 mr-1.5" />
+                              Upload Resume PDF
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  {form.formState.errors.resumeUrl && (
+                    <p className="text-xs text-red-500">{form.formState.errors.resumeUrl.message}</p>
+                  )}
+                </div>
 
-            <div className="flex flex-wrap gap-1.5 min-h-[36px] p-2 bg-neutral-950 border border-neutral-850/60 rounded-lg">
-              {skills.length === 0 ? (
-                <span className="text-xs text-neutral-600 self-center px-1">No tags configured...</span>
-              ) : (
-                skills.map((tag) => (
-                  <Badge key={tag} className="bg-violet-950/40 hover:bg-violet-950/60 text-violet-300 border border-violet-800/40 flex items-center gap-1 px-2.5 py-0.5 capitalize text-xs">
-                    {tag}
-                    <button type="button" onClick={() => removeSkill(tag)} className="hover:text-red-400">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </Badge>
-                ))
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+                <div className="space-y-1.5">
+                  <Label htmlFor="portfolioUrl">Portfolio Website</Label>
+                  <Input
+                    id="portfolioUrl"
+                    placeholder="https://mywebsite.dev"
+                    className="bg-neutral-950 border-neutral-800 focus:border-violet-500 text-neutral-100"
+                    {...form.register("portfolioUrl")}
+                  />
+                  {form.formState.errors.portfolioUrl && (
+                    <p className="text-xs text-red-500">{form.formState.errors.portfolioUrl.message}</p>
+                  )}
+                </div>
 
-      <Button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-violet-600 hover:bg-violet-700 text-neutral-100 font-semibold h-11 flex items-center justify-center gap-2 shadow-lg shadow-violet-500/15"
-      >
-        <Save className="w-5 h-5" />
-        {loading ? "Updating Profile..." : "Save Profile Details"}
-      </Button>
+                <div className="space-y-1.5">
+                  <Label htmlFor="githubUrl">GitHub Profile URL</Label>
+                  <Input
+                    id="githubUrl"
+                    placeholder="https://github.com/myusername"
+                    className="bg-neutral-950 border-neutral-800 focus:border-violet-500 text-neutral-100"
+                    {...form.register("githubUrl")}
+                  />
+                  {form.formState.errors.githubUrl && (
+                    <p className="text-xs text-red-500">{form.formState.errors.githubUrl.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="linkedInUrl">LinkedIn Profile URL</Label>
+                  <Input
+                    id="linkedInUrl"
+                    placeholder="https://linkedin.com/in/myusername"
+                    className="bg-neutral-950 border-neutral-800 focus:border-violet-500 text-neutral-100"
+                    {...form.register("linkedInUrl")}
+                  />
+                  {form.formState.errors.linkedInUrl && (
+                    <p className="text-xs text-red-500">{form.formState.errors.linkedInUrl.message}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Skills Tag Area */}
+              <div className="space-y-3 pt-4 border-t border-neutral-850/40">
+                <Label>Skills & Languages</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={skillInput}
+                    onChange={(e) => setSkillInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addSkill();
+                      }
+                    }}
+                    placeholder="e.g. typescript, nextjs, postgresql (Press enter to add)"
+                    className="bg-neutral-950 border-neutral-800 focus:border-violet-500 text-neutral-100"
+                  />
+                  <Button type="button" onClick={addSkill} className="bg-neutral-850 border border-neutral-800 hover:bg-neutral-850 text-neutral-200">
+                    <Plus className="w-5 h-5" />
+                  </Button>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5 min-h-[36px] p-2 bg-neutral-950 border border-neutral-850/60 rounded-lg">
+                  {skills.length === 0 ? (
+                    <span className="text-xs text-neutral-600 self-center px-1">No tags configured...</span>
+                  ) : (
+                    skills.map((tag) => (
+                      <Badge key={tag} className="bg-violet-950/40 hover:bg-violet-950/60 text-violet-300 border border-violet-800/40 flex items-center gap-1 px-2.5 py-0.5 capitalize text-xs">
+                        {tag}
+                        <button type="button" onClick={() => removeSkill(tag)} className="hover:text-red-400">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </Badge>
+                    ))
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-violet-600 hover:bg-violet-700 text-neutral-100 font-semibold h-11 flex items-center justify-center gap-2 shadow-lg shadow-violet-500/15"
+          >
+            <Save className="w-5 h-5" />
+            {loading ? "Updating Profile..." : "Save Profile Details"}
+          </Button>
+        </div>
+      </div>
     </form>
   );
 }
