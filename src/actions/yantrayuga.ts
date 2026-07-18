@@ -207,3 +207,125 @@ export async function unassignCoordinatorFromTeam(
   revalidatePath(`/dashboard/organizer/events/${eventId}`);
   return updated;
 }
+
+// 5. Update Online Round Config
+export async function updateOnlineRoundConfig(
+  eventId: string,
+  hasOnlineRound: boolean,
+  onlineRoundType: string,
+  onlineRoundDeadline: Date | null,
+  onlineCutoffScore: number
+) {
+  await checkEventOwnership(eventId);
+
+  const updated = await prisma.event.update({
+    where: { id: eventId },
+    data: {
+      hasOnlineRound,
+      onlineRoundType,
+      onlineRoundDeadline,
+      onlineCutoffScore,
+      version: { increment: 1 },
+    },
+  });
+
+  revalidatePath(`/dashboard/organizer/events/${eventId}`);
+  revalidatePath(`/dashboard/participant/events/${updated.slug}`);
+  return updated;
+}
+
+// 6. Update Event Branding Config
+export async function updateEventBrandingConfig(
+  eventId: string,
+  collegeName: string,
+  organizedBy: string
+) {
+  await checkEventOwnership(eventId);
+
+  const updated = await prisma.event.update({
+    where: { id: eventId },
+    data: {
+      collegeName,
+      organizedBy,
+      version: { increment: 1 },
+    },
+  });
+
+  revalidatePath(`/dashboard/organizer/events/${eventId}`);
+  revalidatePath(`/dashboard/participant/events/${updated.slug}`);
+  return updated;
+}
+
+// 7. Submit Online Round Details (Participant action)
+export async function submitTeamOnlineRound(
+  teamId: string,
+  submissionUrl: string,
+  submissionText: string
+) {
+  const user = await requireRole(["PARTICIPANT", "ORGANIZER", "SUPER_ADMIN"]);
+
+  const member = await prisma.teamMember.findFirst({
+    where: { teamId, userId: user.id },
+  });
+
+  if (!member) {
+    throw new Error("You are not a member of this team");
+  }
+
+  const updated = await prisma.team.update({
+    where: { id: teamId },
+    data: {
+      onlineSubmissionUrl: submissionUrl,
+      onlineSubmissionText: submissionText,
+      onlineSubmissionStatus: "SUBMITTED",
+      version: { increment: 1 },
+    },
+    include: { event: true }
+  });
+
+  revalidatePath(`/dashboard/participant/teams`);
+  revalidatePath(`/dashboard/participant/events/${updated.event.slug}`);
+  return updated;
+}
+
+// 8. Update Team Online Score (Organizer action)
+export async function updateTeamOnlineScore(
+  eventId: string,
+  teamId: string,
+  score: number
+) {
+  await checkEventOwnership(eventId);
+
+  const updated = await prisma.team.update({
+    where: { id: teamId },
+    data: {
+      onlineScore: score,
+      onlineSubmissionStatus: "EVALUATED",
+      version: { increment: 1 },
+    },
+  });
+
+  revalidatePath(`/dashboard/organizer/events/${eventId}`);
+  return updated;
+}
+
+// 9. Update Team Table Number (Organizer action)
+export async function updateTeamTableNumber(
+  eventId: string,
+  teamId: string,
+  tableNo: string
+) {
+  await checkEventOwnership(eventId);
+
+  const updated = await prisma.team.update({
+    where: { id: teamId },
+    data: {
+      tableNo: tableNo || null,
+      version: { increment: 1 },
+    },
+  });
+
+  revalidatePath(`/dashboard/organizer/events/${eventId}`);
+  return updated;
+}
+

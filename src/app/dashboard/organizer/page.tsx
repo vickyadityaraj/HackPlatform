@@ -44,12 +44,18 @@ export default async function OrganizerDashboardPage() {
         </div>
 
         {/* Create Event Dialog Action */}
-        <CreateEventDialog trigger={
-          <Button className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-neutral-100 font-semibold h-10 px-5 shadow-lg shadow-violet-500/20 transition-all duration-300">
-            <Plus className="w-5 h-5" />
-            New Event
-          </Button>
-        } />
+        {(session.user.role === "SUPER_ADMIN" || events.length === 0) ? (
+          <CreateEventDialog trigger={
+            <Button className="flex items-center gap-2 bg-violet-600 hover:bg-violet-750 text-neutral-100 font-semibold h-10 px-5 shadow-lg shadow-violet-500/20 transition-all duration-300">
+              <Plus className="w-5 h-5" />
+              New Event
+            </Button>
+          } />
+        ) : (
+          <span className="text-neutral-500 text-xs font-semibold bg-neutral-900 border border-neutral-800 p-2.5 rounded-lg">
+            Organizers are limited to 1 active event.
+          </span>
+        )}
       </div>
 
       {/* Metrics Row */}

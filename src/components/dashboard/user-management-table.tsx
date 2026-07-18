@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { updateUserStatus } from "@/actions/admin";
+import { updateUserStatus, deleteUser } from "@/actions/admin";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Role, UserStatus } from "@prisma/client";
-import { Search, ShieldAlert, Check } from "lucide-react";
+import { Search, ShieldAlert, Check, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface User {
@@ -73,6 +73,30 @@ export function UserManagementTable({ users, currentUserId }: UserManagementTabl
     }
   };
 
+  const handleDeleteUser = async (userId: string, email: string) => {
+    if (userId === currentUserId) {
+      alert("You cannot delete your own admin account.");
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to permanently remove user ${email}?`)) {
+      return;
+    }
+
+    setLoadingId(userId);
+    setError(null);
+    setSuccess(null);
+    try {
+      await deleteUser(userId);
+      setSuccess("User account deleted successfully");
+      router.refresh();
+    } catch (err: any) {
+      setError(err.message || "Failed to delete user account");
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
   return (
     <div className="space-y-4 font-sans">
       {error && (
@@ -108,6 +132,7 @@ export function UserManagementTable({ users, currentUserId }: UserManagementTabl
               <TableHead className="text-neutral-400 font-semibold h-10">Role Clearance</TableHead>
               <TableHead className="text-neutral-400 font-semibold h-10">Account Status</TableHead>
               <TableHead className="text-neutral-400 font-semibold h-10">Registered At</TableHead>
+              <TableHead className="text-neutral-400 font-semibold h-10 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -159,8 +184,21 @@ export function UserManagementTable({ users, currentUserId }: UserManagementTabl
                     </select>
                   </TableCell>
 
-                  <TableCell className="text-neutral-500 text-xs">
+                  <TableCell className="text-neutral-550 text-xs">
                     {new Date(u.createdAt).toLocaleDateString()}
+                  </TableCell>
+                  
+                  {/* Actions Column */}
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={loadingId === u.id || u.id === currentUserId}
+                      onClick={() => handleDeleteUser(u.id, u.email)}
+                      className="text-red-400 hover:text-red-300 hover:bg-red-950/20 px-2.5 h-8 transition-colors duration-200"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))

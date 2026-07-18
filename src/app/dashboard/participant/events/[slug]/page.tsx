@@ -7,11 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, Award, ShieldAlert, Trophy, Users, Megaphone } from "lucide-react";
+import { Calendar, Award, ShieldAlert, Trophy, Users, Megaphone, LucideGlobe, LucideTv } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import dynamic from "next/dynamic";
 import { auth } from "@/auth";
+import { OnlineSubmissionForm } from "@/components/dashboard/online-submission-form";
 
 const RegisterDialog = dynamic(
   () => import("@/components/dashboard/register-dialog").then((mod) => mod.RegisterDialog),
@@ -63,6 +64,17 @@ export default async function EventPage({ params }: EventPageProps) {
   ]);
   const isRegistered = !!registration;
   const inTeam = !!registration?.teamId;
+
+  // Retrieve team details
+  const teamDetails = registration?.teamId ? await prisma.team.findUnique({
+    where: { id: registration.teamId },
+    include: {
+      coordinator: { select: { id: true, name: true, email: true } }
+    }
+  }) : null;
+
+  const isShortlisted = teamDetails && event.shortlistedTeams.includes(teamDetails.id);
+  const showOfflineScreen = !event.hasOnlineRound || (event.hasOnlineRound && isShortlisted);
 
   return (
     <div className="space-y-8 font-sans">
@@ -126,11 +138,21 @@ export default async function EventPage({ params }: EventPageProps) {
             ) : (
               <div className="space-y-2">
                 <div className="text-xs text-center text-emerald-400 font-semibold">✓ Team Joined: {registration.team?.name}</div>
-                <Link href="/dashboard/participant/teams">
-                  <Button className="w-full bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 border border-violet-500/30 text-xs h-10">
-                    Go to Workspace
-                  </Button>
-                </Link>
+                <div className="flex flex-col gap-2">
+                  <Link href="/dashboard/participant/teams" className="w-full">
+                    <Button className="w-full bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 border border-violet-500/30 text-xs h-10">
+                      Go to Workspace
+                    </Button>
+                  </Link>
+                  {showOfflineScreen && (
+                    <Link href={`/dashboard/participant/events/${event.slug}/offline`} target="_blank" className="w-full">
+                      <Button className="w-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs h-10 flex items-center justify-center gap-1.5 font-bold shadow-md shadow-amber-500/5">
+                        <LucideTv className="w-4 h-4" />
+                        Offline Display Screen
+                      </Button>
+                    </Link>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -140,8 +162,14 @@ export default async function EventPage({ params }: EventPageProps) {
       {/* Tabs panels */}
       <div className="max-w-6xl">
         <Tabs defaultValue="overview" className="space-y-8">
-          <TabsList className="bg-neutral-900 border border-neutral-800 p-1 rounded-lg flex flex-wrap max-w-4xl">
+          <TabsList className="bg-neutral-900 border border-neutral-800 p-1 rounded-lg flex flex-wrap max-w-5xl">
             <TabsTrigger value="overview" className="flex-1 py-2 text-xs font-semibold rounded-md text-neutral-400 data-[state=active]:bg-neutral-850 data-[state=active]:text-neutral-100">Overview</TabsTrigger>
+            {event.hasOnlineRound && (
+              <TabsTrigger value="online" className="flex-1 py-2 text-xs font-semibold rounded-md text-neutral-405 data-[state=active]:bg-neutral-850 data-[state=active]:text-neutral-100 flex items-center justify-center gap-1.5 font-bold">
+                <LucideGlobe className="w-3.5 h-3.5 text-violet-400 animate-pulse" />
+                Online Round
+              </TabsTrigger>
+            )}
             <TabsTrigger value="rules" className="flex-1 py-2 text-xs font-semibold rounded-md text-neutral-400 data-[state=active]:bg-neutral-850 data-[state=active]:text-neutral-100">Rules</TabsTrigger>
             <TabsTrigger value="schedule" className="flex-1 py-2 text-xs font-semibold rounded-md text-neutral-400 data-[state=active]:bg-neutral-850 data-[state=active]:text-neutral-100">Schedule</TabsTrigger>
             <TabsTrigger value="faq" className="flex-1 py-2 text-xs font-semibold rounded-md text-neutral-400 data-[state=active]:bg-neutral-850 data-[state=active]:text-neutral-100">FAQ</TabsTrigger>
@@ -149,6 +177,130 @@ export default async function EventPage({ params }: EventPageProps) {
             <TabsTrigger value="announcements" className="flex-1 py-2 text-xs font-semibold rounded-md text-neutral-400 data-[state=active]:bg-neutral-850 data-[state=active]:text-neutral-100">Announcements</TabsTrigger>
             <TabsTrigger value="matchmaking" className="flex-1 py-2 text-xs font-semibold rounded-md text-neutral-400 data-[state=active]:bg-neutral-850 data-[state=active]:text-neutral-100">Find Teams ({interestedCount})</TabsTrigger>
           </TabsList>
+
+          {/* Online Round Tab Content */}
+          {event.hasOnlineRound && (
+            <TabsContent value="online">
+              <Card className="bg-neutral-900 border-neutral-800 text-neutral-100 shadow-xl">
+                <CardContent className="py-6 space-y-6">
+                  <div className="border-b border-neutral-800 pb-3 flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                      <h3 className="text-lg font-bold text-neutral-100">Online Selection Round</h3>
+                      <p className="text-xs text-neutral-500 mt-0.5">Round format: <strong className="text-neutral-350">{event.onlineRoundType}</strong></p>
+                    </div>
+                    {event.onlineRoundDeadline && (
+                      <span className="text-xs font-semibold text-neutral-400 bg-neutral-950 px-3 py-1.5 rounded-xl border border-neutral-850">
+                        Deadline: {new Date(event.onlineRoundDeadline).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+
+                  {!inTeam ? (
+                    <div className="py-8 text-center bg-neutral-950/40 rounded-xl border border-dashed border-neutral-800">
+                      <Users className="w-10 h-10 mx-auto text-neutral-600 mb-2 animate-bounce" />
+                      <p className="text-sm font-semibold text-neutral-350">Team Registration Required</p>
+                      <p className="text-xs text-neutral-500 mt-1 max-w-sm mx-auto">
+                        To participate in this round, you must form or join a team first.
+                      </p>
+                      <Link href="/dashboard/participant/teams" className="inline-block mt-4">
+                        <Button className="bg-violet-600 hover:bg-violet-750 text-xs h-9 px-4">
+                          Go to My Teams
+                        </Button>
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {/* Submission details and form */}
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-bold uppercase tracking-wider text-neutral-350">Submit Selection Deliverables</h4>
+                        {teamDetails?.onlineSubmissionStatus === "PENDING" ? (
+                          <OnlineSubmissionForm teamId={teamDetails.id} />
+                        ) : (
+                          <div className="bg-neutral-950 p-5 rounded-xl border border-neutral-850 space-y-4">
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider">Submission Status</span>
+                              <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-405 border border-emerald-500/20 rounded text-[10px] font-extrabold uppercase tracking-wider">
+                                {teamDetails?.onlineSubmissionStatus}
+                              </span>
+                            </div>
+                            <div className="space-y-2">
+                              <div>
+                                <span className="text-[10px] text-neutral-500 uppercase font-mono">PPT / Slide Deck Link</span>
+                                <a 
+                                  href={teamDetails?.onlineSubmissionUrl || '#'} 
+                                  target="_blank" 
+                                  rel="noreferrer"
+                                  className="block text-xs text-violet-400 hover:underline font-bold truncate mt-0.5"
+                                >
+                                  {teamDetails?.onlineSubmissionUrl}
+                                </a>
+                              </div>
+                              {teamDetails?.onlineSubmissionText && (
+                                <div>
+                                  <span className="text-[10px] text-neutral-500 uppercase font-mono">Proposal Summary</span>
+                                  <p className="text-xs text-neutral-300 mt-1 bg-neutral-900 p-3 rounded-lg leading-relaxed whitespace-pre-wrap">
+                                    {teamDetails.onlineSubmissionText}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Selection and score status */}
+                      <div className="bg-neutral-955 border border-neutral-850 p-6 rounded-xl space-y-6 h-fit">
+                        <h4 className="text-sm font-bold uppercase tracking-wider text-neutral-300 border-b border-neutral-850 pb-2">Evaluation Status</h4>
+                        
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs font-semibold text-neutral-400">Assessment Score</span>
+                            <span className="text-lg font-black text-violet-400 font-mono">
+                              {teamDetails?.onlineScore !== null ? `${teamDetails?.onlineScore} pts` : "Pending Evaluation"}
+                            </span>
+                          </div>
+
+                          <div className="border-t border-neutral-850 pt-4 space-y-2">
+                            <span className="text-xs font-semibold text-neutral-400 block">Shortlisting Selection Status</span>
+                            
+                            {isShortlisted ? (
+                              <div className="bg-emerald-500/5 border border-emerald-500/20 p-4 rounded-xl text-center space-y-2">
+                                <p className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center justify-center gap-1.5">
+                                  🎉 Shortlisted for Finals
+                                </p>
+                                <p className="text-[10px] text-neutral-400 leading-normal">
+                                  Congratulations! Your team has been selected to move forward to the offline presentation round. Open the physical table screen to present at the venue!
+                                </p>
+                                <Link href={`/dashboard/participant/events/${event.slug}/offline`} target="_blank" className="block mt-2">
+                                  <Button className="w-full bg-amber-500 hover:bg-amber-600 text-neutral-950 text-xs font-bold h-9">
+                                    Open Offline Table Screen
+                                  </Button>
+                                </Link>
+                              </div>
+                            ) : event.shortlistCommitted ? (
+                              <div className="bg-red-500/5 border border-red-500/20 p-4 rounded-xl text-center">
+                                <p className="text-xs font-black uppercase tracking-wider text-red-505">Not Shortlisted</p>
+                                <p className="text-[10px] text-neutral-450 leading-normal mt-1">
+                                  We regret to inform you that your team has not been selected for the final offline phase of this hackathon.
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="bg-neutral-950 border border-neutral-850 p-4 rounded-xl text-center">
+                                <p className="text-xs font-bold text-neutral-300">Awaiting Shortlist Selection</p>
+                                <p className="text-[10px] text-neutral-500 leading-normal mt-1">
+                                  The event organizer is currently reviewing all submissions and scores. The final shortlist will be published shortly.
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
           {/* Overview Tab Content */}
           <TabsContent value="overview" className="space-y-8">

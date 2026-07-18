@@ -223,7 +223,33 @@ export async function getJudgeSubmissions(eventId: string, userId?: string) {
 export async function getSubmissionIdForUser(eventId: string, identifier: string) {
   await requireRole(["JUDGE", "SUPER_ADMIN"]);
   
-  // Find registration
+  // 1. Try to find by team ID directly
+  const teamDirect = await prisma.team.findFirst({
+    where: {
+      id: identifier,
+      eventId,
+      deletedAt: null,
+    },
+    include: {
+      submissions: {
+        where: { deletedAt: null },
+        take: 1
+      }
+    }
+  });
+
+  if (teamDirect) {
+    const submission = teamDirect.submissions[0];
+    if (!submission) {
+      throw new Error(`Team "${teamDirect.name}" has not submitted a project yet.`);
+    }
+    return {
+      submissionId: submission.id,
+      teamName: teamDirect.name
+    };
+  }
+
+  // 2. Fallback to registration/user search
   const registration = await prisma.registration.findFirst({
     where: {
       eventId,

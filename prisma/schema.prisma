@@ -214,6 +214,14 @@ model Event {
   shortlistedTeams        String[]  @default([])
   paymentQrUrl            String?
 
+  // Online round and Branding configuration
+  hasOnlineRound          Boolean   @default(true)
+  onlineRoundType         String    @default("PROPOSAL") // MCQ, CODING, PROPOSAL
+  onlineRoundDeadline     DateTime?
+  onlineCutoffScore       Int       @default(0)
+  collegeName             String    @default("HackPlatform")
+  organizedBy             String    @default("Organized by Department of CS, IoT & ECE")
+
   @@index([slug])
   @@index([organizerId])
 }
@@ -270,6 +278,12 @@ model Team {
 
   coordinatorId   String?
   coordinator     User?        @relation("TeamCoordinator", fields: [coordinatorId], references: [id], onDelete: SetNull)
+
+  tableNo                 String?
+  onlineScore             Int?
+  onlineSubmissionUrl     String?
+  onlineSubmissionText    String?      @db.Text
+  onlineSubmissionStatus  String       @default("PENDING") // PENDING, SUBMITTED, EVALUATED
 
   @@index([eventId])
   @@index([inviteToken])

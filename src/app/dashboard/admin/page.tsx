@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, Settings, ScrollText, Calendar, Lock } from "lucide-react";
 import dynamic from "next/dynamic";
+import { prisma } from "@/lib/prisma";
 
 const UserManagementTable = dynamic(
   () => import("@/components/dashboard/user-management-table").then((mod) => mod.UserManagementTable),
@@ -22,6 +23,14 @@ const AdminSettingsForm = dynamic(
   }
 );
 
+const CreateOrganizerDialog = dynamic(
+  () => import("@/components/dashboard/create-organizer-dialog").then((mod) => mod.CreateOrganizerDialog),
+  {
+    ssr: false,
+    loading: () => <div className="h-10 w-40 bg-neutral-800 animate-pulse rounded-lg" />,
+  }
+);
+
 export default async function AdminDashboardPage() {
   const session = await auth();
 
@@ -30,10 +39,15 @@ export default async function AdminDashboardPage() {
   }
 
   // Load admin panels data in parallel, skipping redundant auth checks since the page has already guarded the role
-  const [settings, users, logs] = await Promise.all([
+  const [settings, users, logs, activeEvents] = await Promise.all([
     getPlatformSettings(true),
     getUsersList(true),
     getAuditLogs(true),
+    prisma.event.findMany({
+      where: { deletedAt: null },
+      select: { id: true, title: true },
+      orderBy: { createdAt: "desc" },
+    }),
   ]);
 
   const totalUsers = users.length;
@@ -115,7 +129,14 @@ export default async function AdminDashboardPage() {
         </TabsList>
 
         {/* Users Management */}
-        <TabsContent value="users">
+        <TabsContent value="users" className="space-y-4">
+          <div className="flex justify-between items-center gap-4 flex-wrap pb-2 border-b border-neutral-800/60">
+            <div>
+              <h2 className="text-lg font-bold text-neutral-100">Platform Users</h2>
+              <p className="text-xs text-neutral-500">Configure client user access levels.</p>
+            </div>
+            <CreateOrganizerDialog events={activeEvents} />
+          </div>
           <UserManagementTable users={users as any} currentUserId={session.user.id} />
         </TabsContent>
 

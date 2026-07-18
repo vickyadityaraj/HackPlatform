@@ -10,6 +10,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import dynamic from "next/dynamic";
 import YantraYugaConsole from "./yantrayuga-console";
+import { Edit } from "lucide-react";
+
+const EditEventForm = dynamic(
+  () => import("@/components/dashboard/edit-event-form").then((mod) => mod.EditEventForm),
+  {
+    ssr: false,
+    loading: () => <div className="p-8 text-center text-neutral-500 text-xs">Loading edit form...</div>,
+  }
+);
 
 const FormBuilder = dynamic(
   () => import("@/components/dashboard/form-builder").then((mod) => mod.FormBuilder),
@@ -160,6 +169,13 @@ export default async function EventControlRoom({ params }: EventControlRoomProps
             <Settings className="w-3.5 h-3.5" />
             Yantra Yugam Console
           </TabsTrigger>
+          <TabsTrigger
+            value="edit"
+            className="flex-1 py-2 text-xs font-semibold rounded-md text-neutral-400 data-[state=active]:bg-neutral-850 data-[state=active]:text-neutral-100 flex items-center justify-center gap-1.5"
+          >
+            <Edit className="w-3.5 h-3.5" />
+            Edit Event
+          </TabsTrigger>
         </TabsList>
 
         {/* Custom Question Builder Tab */}
@@ -241,11 +257,22 @@ export default async function EventControlRoom({ params }: EventControlRoomProps
               githubSubmissionActive: event.githubSubmissionActive,
               shortlistCommitted: event.shortlistCommitted,
               shortlistedTeams: event.shortlistedTeams,
+              hasOnlineRound: event.hasOnlineRound,
+              onlineRoundType: event.onlineRoundType,
+              onlineRoundDeadline: event.onlineRoundDeadline,
+              onlineCutoffScore: event.onlineCutoffScore,
+              collegeName: event.collegeName,
+              organizedBy: event.organizedBy,
             }}
             coordinators={coordinators as any}
             teams={consoleTeams as any}
             mentorGroups={mentorGroups as any}
           />
+        </TabsContent>
+
+        {/* Edit Event Details Tab */}
+        <TabsContent value="edit">
+          <EditEventForm event={event as any} />
         </TabsContent>
       </Tabs>
     </div>

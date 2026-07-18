@@ -8,13 +8,18 @@ import {
     createMentorGroup,
     deleteMentorGroup,
     assignCoordinatorToTeam,
-    unassignCoordinatorFromTeam
+    unassignCoordinatorFromTeam,
+    // New Actions
+    updateOnlineRoundConfig,
+    updateEventBrandingConfig,
+    updateTeamOnlineScore,
+    updateTeamTableNumber
 } from "@/actions/yantrayuga";
 import {
     LucideSettings, LucideTrophy, LucideUsers, LucideShieldAlert,
     LucideRefreshCcw, LucideCheckCircle2, LucideClock, LucideAlertTriangle,
     LucideSave, LucidePlus, LucideTrash2, LucideLoader2, LucideExternalLink,
-    LucideX, LucideSearch
+    LucideX, LucideSearch, LucideGlobe, LucideFileText, LucideLayout
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 
@@ -36,6 +41,11 @@ interface Team {
     name: string;
     coordinatorId: string | null;
     coordinator: Coordinator | null;
+    tableNo: string | null;
+    onlineScore: number | null;
+    onlineSubmissionUrl: string | null;
+    onlineSubmissionText: string | null;
+    onlineSubmissionStatus: string;
     submissions: {
         id: string;
         evaluations: {
@@ -60,6 +70,12 @@ interface YantraYugaConsoleProps {
         githubSubmissionActive: boolean;
         shortlistCommitted: boolean;
         shortlistedTeams: string[];
+        hasOnlineRound: boolean;
+        onlineRoundType: string;
+        onlineRoundDeadline: any;
+        onlineCutoffScore: number;
+        collegeName: string;
+        organizedBy: string;
     };
     coordinators: Coordinator[];
     teams: Team[];
@@ -73,7 +89,7 @@ export default function YantraYugaConsole({
     teams: initialTeams,
     mentorGroups: initialGroups
 }: YantraYugaConsoleProps) {
-    const [activeSubTab, setActiveSubTab] = useState<'leaderboard' | 'configs' | 'assignments' | 'groups'>('leaderboard');
+    const [activeSubTab, setActiveSubTab] = useState<'leaderboard' | 'online' | 'configs' | 'assignments' | 'groups'>('leaderboard');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Dynamic states
@@ -98,6 +114,18 @@ export default function YantraYugaConsole({
     const [selectedTeamsForAssignment, setSelectedTeamsForAssignment] = useState<string[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
 
+    // Online Round states
+    const [hasOnlineRound, setHasOnlineRound] = useState(eventState.hasOnlineRound);
+    const [onlineRoundType, setOnlineRoundType] = useState(eventState.onlineRoundType || 'PROPOSAL');
+    const [onlineRoundDeadline, setOnlineRoundDeadline] = useState(
+        eventState.onlineRoundDeadline ? new Date(eventState.onlineRoundDeadline).toISOString().split('T')[0] : ''
+    );
+    const [onlineCutoffScore, setOnlineCutoffScore] = useState(eventState.onlineCutoffScore || 0);
+
+    // Branding states
+    const [collegeName, setCollegeName] = useState(eventState.collegeName || 'HackPlatform');
+    const [organizedBy, setOrganizedBy] = useState(eventState.organizedBy || 'Organized by Department of CS, IoT & ECE');
+
     // Dynamic list of coordinators currently assigned to groups
     const assignedCoordinatorIds = useMemo(() => {
         return groups.flatMap(g => g.coordinators.map(c => c.id));
@@ -119,6 +147,84 @@ export default function YantraYugaConsole({
         } finally {
             setIsSubmitting(false);
         }
+    }
+
+    // Save online round configuration
+    async function saveOnlineRoundConfigSettings() {
+        setIsSubmitting(true);
+        try {
+            const deadlineDate = onlineRoundDeadline ? new Date(onlineRoundDeadline) : null;
+            await updateOnlineRoundConfig(eventId, hasOnlineRound, onlineRoundType, deadlineDate, Number(onlineCutoffScore));
+            setEventState(prev => ({
+                ...prev,
+                hasOnlineRound,
+                onlineRoundType,
+                onlineRoundDeadline: deadlineDate,
+                onlineCutoffScore: Number(onlineCutoffScore)
+            }));
+            alert('Online Round configuration updated.');
+        } catch (err) {
+            alert('Failed to save Online Round settings.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
+    // Save branding config
+    async function saveBrandingConfig() {
+        setIsSubmitting(true);
+        try {
+            await updateEventBrandingConfig(eventId, collegeName, organizedBy);
+            setEventState(prev => ({
+                ...prev,
+                collegeName,
+                organizedBy
+            }));
+            alert('Branding configurations updated.');
+        } catch (err) {
+            alert('Failed to save branding config.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
+    // Update individual team online score
+    async function handleTeamOnlineScoreChange(teamId: string, score: number) {
+        try {
+            await updateTeamOnlineScore(eventId, teamId, score);
+            setTeams(prev => prev.map(t => t.id === teamId ? { ...t, onlineScore: score, onlineSubmissionStatus: 'EVALUATED' } : t));
+        } catch (err) {
+            alert('Failed to update team score.');
+        }
+    }
+
+    // Update table assignment
+    async function handleTableNoChange(teamId: string, tableNo: string) {
+        try {
+            await updateTeamTableNumber(eventId, teamId, tableNo);
+            setTeams(prev => prev.map(t => t.id === teamId ? { ...t, tableNo: tableNo || null } : t));
+        } catch (err) {
+            alert('Failed to update table number.');
+        }
+    }
+
+    // Bulk Shortlist teams by Cutoff Score
+    async function handleBulkShortlist() {
+        if (!confirm(`Are you sure you want to shortlist all teams with an online score of at least ${onlineCutoffScore}?`)) return;
+        const eligibleTeamIds = teams
+            .filter(t => t.onlineScore !== null && t.onlineScore >= onlineCutoffScore)
+            .map(t => t.id);
+        
+        if (eligibleTeamIds.length === 0) {
+            alert('No teams meet the cutoff score criteria.');
+            return;
+        }
+
+        setShortlistedTeamsList(prev => {
+            const next = new Set([...prev, ...eligibleTeamIds]);
+            return Array.from(next);
+        });
+        alert(`Shortlisted ${eligibleTeamIds.length} teams based on cutoff score. Make sure to commit the shortlist to lock it.`);
     }
 
     // Save shortlist config
@@ -286,8 +392,9 @@ export default function YantraYugaConsole({
             <div className="flex border-b border-neutral-850 gap-4 mb-6 bg-neutral-900/20 p-2 rounded-xl">
                 {[
                     { id: 'leaderboard', label: 'Leaderboard', icon: LucideTrophy },
-                    { id: 'configs', label: 'Configuration & Lockdown', icon: LucideSettings },
-                    { id: 'assignments', label: 'Coordinator Assignments', icon: LucideShieldAlert },
+                    { id: 'online', label: 'Online Round', icon: LucideGlobe },
+                    { id: 'configs', label: 'Branding & Lockdown', icon: LucideSettings },
+                    { id: 'assignments', label: 'Table Assignments', icon: LucideShieldAlert },
                     { id: 'groups', label: 'Mentor Groups', icon: LucideUsers }
                 ].map(tab => (
                     <button
@@ -327,6 +434,7 @@ export default function YantraYugaConsole({
                                 <tr className="border-b border-neutral-800 text-[10px] font-black tracking-widest text-neutral-400 uppercase bg-neutral-950/40">
                                     <th className="py-4 px-6">Rank</th>
                                     <th className="py-4 px-6">Team Name</th>
+                                    <th className="py-4 px-6">Table No</th>
                                     <th className="py-4 px-6">Assigned Coordinator</th>
                                     <th className="py-4 px-6 text-right">Score</th>
                                 </tr>
@@ -342,6 +450,9 @@ export default function YantraYugaConsole({
                                                 <p className="font-bold text-neutral-200">{team.name}</p>
                                             </div>
                                         </td>
+                                        <td className="py-4 px-6 font-mono font-bold text-amber-500">
+                                            {team.tableNo || 'N/A'}
+                                        </td>
                                         <td className="py-4 px-6 font-semibold">
                                             {team.coordinator ? (
                                                 <span className="text-violet-400">{team.coordinator.name || team.coordinator.email}</span>
@@ -356,7 +467,7 @@ export default function YantraYugaConsole({
                                 ))}
                                 {filteredLeaderboard.length === 0 && (
                                     <tr>
-                                        <td colSpan={4} className="text-center py-12 text-neutral-500 font-semibold">
+                                        <td colSpan={5} className="text-center py-12 text-neutral-500 font-semibold">
                                             No teams or score metrics recorded yet.
                                         </td>
                                     </tr>
@@ -367,11 +478,217 @@ export default function YantraYugaConsole({
                 </div>
             )}
 
-            {/* TAB 2: Configs */}
+            {/* TAB 2: Online Round Management */}
+            {activeSubTab === 'online' && (
+                <div className="space-y-6">
+                    {/* Setup Config & Cutoff */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* Config card */}
+                        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 space-y-4 md:col-span-2">
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-300 border-b border-neutral-800 pb-2">Online Round Setup</h3>
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-[10px] text-neutral-400 uppercase font-bold">Selection Round Status</label>
+                                    <div className="flex items-center gap-3 bg-neutral-950 border border-neutral-850 p-2.5 rounded-xl">
+                                        <input
+                                            type="checkbox"
+                                            checked={hasOnlineRound}
+                                            onChange={(e) => setHasOnlineRound(e.target.checked)}
+                                            className="w-4 h-4 accent-violet-600 rounded bg-neutral-950 border-neutral-800 cursor-pointer"
+                                            id="hasOnlineRound"
+                                        />
+                                        <label htmlFor="hasOnlineRound" className="text-xs font-semibold text-neutral-200 cursor-pointer">
+                                            Enable Online Selection Round
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] text-neutral-400 uppercase font-bold">Assessment Type</label>
+                                    <select
+                                        value={onlineRoundType}
+                                        onChange={(e) => setOnlineRoundType(e.target.value)}
+                                        className="w-full bg-neutral-950 border border-neutral-850 rounded-xl p-2.5 text-xs font-semibold text-white focus:outline-none focus:border-violet-500"
+                                    >
+                                        <option value="PROPOSAL">Proposal / PPT Submission</option>
+                                        <option value="QUIZ">MCQ / Online Assessment</option>
+                                        <option value="CODING">Online Coding Challenge</option>
+                                    </select>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] text-neutral-400 uppercase font-bold">Online Submission Deadline</label>
+                                    <input
+                                        type="date"
+                                        value={onlineRoundDeadline}
+                                        onChange={(e) => setOnlineRoundDeadline(e.target.value)}
+                                        className="w-full bg-neutral-950 border border-neutral-850 rounded-xl p-2 text-xs font-semibold text-white focus:outline-none focus:border-violet-500"
+                                    />
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] text-neutral-400 uppercase font-bold">Cutoff Score (Shortlist Threshold)</label>
+                                    <input
+                                        type="number"
+                                        value={onlineCutoffScore}
+                                        onChange={(e) => setOnlineCutoffScore(Number(e.target.value))}
+                                        className="w-full bg-neutral-950 border border-neutral-850 rounded-xl p-2 text-xs font-semibold text-white focus:outline-none focus:border-violet-500"
+                                    />
+                                </div>
+                            </div>
+
+                            <Button
+                                onClick={saveOnlineRoundConfigSettings}
+                                disabled={isSubmitting}
+                                className="w-full bg-violet-600 hover:bg-violet-750 text-white font-bold text-xs h-10 mt-2"
+                            >
+                                Save Online Round Config
+                            </Button>
+                        </div>
+
+                        {/* Cutoff action card */}
+                        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 space-y-4 md:col-span-1 flex flex-col justify-between">
+                            <div className="space-y-2">
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-300 border-b border-neutral-800 pb-2">Bulk Shortlisting</h3>
+                                <p className="text-[10px] text-neutral-400 leading-relaxed">
+                                    Shortlist all teams that scored greater than or equal to the threshold score of <strong className="text-violet-400">{onlineCutoffScore}</strong>.
+                                </p>
+                            </div>
+                            <Button
+                                onClick={handleBulkShortlist}
+                                disabled={isSubmitting || !hasOnlineRound}
+                                className="w-full bg-indigo-600 hover:bg-indigo-750 text-white font-bold text-xs h-10 mt-4 shadow-md shadow-indigo-500/10"
+                            >
+                                Apply Cutoff Filter
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Team Submissions list */}
+                    {hasOnlineRound && (
+                        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-5 space-y-4">
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-300 border-b border-neutral-800 pb-2">Registered Teams Online Performance</h3>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-xs border-collapse">
+                                    <thead>
+                                        <tr className="border-b border-neutral-800 text-[10px] font-black tracking-widest text-neutral-400 uppercase bg-neutral-950/40">
+                                            <th className="py-3 px-4">Team</th>
+                                            <th className="py-3 px-4">Round Status</th>
+                                            <th className="py-3 px-4">PPT / Proposal Slide</th>
+                                            <th className="py-3 px-4 w-40">Score</th>
+                                            <th className="py-3 px-4 text-right">Shortlist for Offline</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-neutral-850 text-neutral-300">
+                                        {teams.map(t => (
+                                            <tr key={t.id} className="hover:bg-neutral-850/20 transition-colors">
+                                                <td className="py-3.5 px-4 font-semibold text-neutral-100">
+                                                    <div>
+                                                        <p>{t.name}</p>
+                                                        <p className="text-[9px] font-mono text-neutral-550 mt-0.5">{t.id}</p>
+                                                    </div>
+                                                </td>
+                                                <td className="py-3.5 px-4">
+                                                    <span className={`px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider ${
+                                                        t.onlineSubmissionStatus === "EVALUATED" 
+                                                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/25"
+                                                            : t.onlineSubmissionStatus === "SUBMITTED"
+                                                            ? "bg-amber-500/10 text-amber-400 border border-amber-500/25"
+                                                            : "bg-neutral-800 text-neutral-400 border border-neutral-700"
+                                                    }`}>
+                                                        {t.onlineSubmissionStatus}
+                                                    </span>
+                                                </td>
+                                                <td className="py-3.5 px-4">
+                                                    {t.onlineSubmissionUrl ? (
+                                                        <a 
+                                                            href={t.onlineSubmissionUrl} 
+                                                            target="_blank" 
+                                                            rel="noreferrer"
+                                                            className="text-violet-400 hover:underline flex items-center gap-1.5 font-bold"
+                                                        >
+                                                            <LucideExternalLink className="w-3.5 h-3.5" />
+                                                            View Material
+                                                        </a>
+                                                    ) : (
+                                                        <span className="text-neutral-500 font-mono italic">No Material</span>
+                                                    )}
+                                                </td>
+                                                <td className="py-3.5 px-4">
+                                                    <input
+                                                        type="number"
+                                                        value={t.onlineScore !== null ? t.onlineScore : ''}
+                                                        onChange={(e) => handleTeamOnlineScoreChange(t.id, Number(e.target.value))}
+                                                        placeholder="N/A"
+                                                        className="w-20 bg-neutral-950 border border-neutral-850 rounded-lg p-1.5 text-center text-xs font-semibold focus:outline-none focus:border-violet-500 text-white"
+                                                    />
+                                                </td>
+                                                <td className="py-3.5 px-4 text-right">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={shortlistedTeamsList.includes(t.id)}
+                                                        onChange={() => handleShortlistToggle(t.id)}
+                                                        className="w-4 h-4 accent-violet-600 rounded bg-neutral-950 border-neutral-800 cursor-pointer"
+                                                    />
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {teams.length === 0 && (
+                                            <tr>
+                                                <td colSpan={5} className="text-center py-8 text-neutral-500 italic">No registered teams found.</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* TAB 3: Branding & Lockdown */}
             {activeSubTab === 'configs' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {/* Branding settings */}
+                    <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 space-y-6 md:col-span-1">
+                        <h3 className="text-sm font-bold tracking-widest text-neutral-300 uppercase border-b border-neutral-850 pb-3">Microsite Branding</h3>
+                        
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-neutral-400 tracking-[0.2em] uppercase">Institution / Host Logo Text</label>
+                                <input
+                                    type="text"
+                                    value={collegeName}
+                                    onChange={(e) => setCollegeName(e.target.value)}
+                                    className="w-full bg-neutral-950 border border-neutral-850 rounded-xl p-3 text-xs font-semibold text-white focus:outline-none focus:border-violet-500"
+                                    placeholder="e.g. Malla Reddy University"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-neutral-400 tracking-[0.2em] uppercase">Organized By Subtext</label>
+                                <input
+                                    type="text"
+                                    value={organizedBy}
+                                    onChange={(e) => setOrganizedBy(e.target.value)}
+                                    className="w-full bg-neutral-950 border border-neutral-850 rounded-xl p-3 text-xs font-semibold text-white focus:outline-none focus:border-violet-500"
+                                    placeholder="e.g. Organized by Department of CS, IoT & ECE"
+                                />
+                            </div>
+                        </div>
+
+                        <Button
+                            onClick={saveBrandingConfig}
+                            disabled={isSubmitting}
+                            className="w-full py-6 bg-indigo-600 hover:bg-indigo-750 text-white font-bold text-xs tracking-wider"
+                        >
+                            Save Branding Config
+                        </Button>
+                    </div>
+
                     {/* Review phases toggle */}
-                    <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 space-y-6">
+                    <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 space-y-6 md:col-span-1">
                         <h3 className="text-sm font-bold tracking-widest text-neutral-300 uppercase border-b border-neutral-850 pb-3">Evaluation Phase Control</h3>
                         <div className="space-y-4">
                             {Object.keys(reviewPhases).map((phase) => (
@@ -417,27 +734,27 @@ export default function YantraYugaConsole({
                             disabled={isSubmitting}
                             className="w-full py-6 bg-violet-600 hover:bg-violet-750 text-white font-bold text-xs tracking-wider"
                         >
-                            Save Configurations
+                            Save Phase Controls
                         </Button>
                     </div>
 
                     {/* Shortlist lockdown */}
-                    <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 space-y-6">
-                        <h3 className="text-sm font-bold tracking-widest text-neutral-300 uppercase border-b border-neutral-850 pb-3">Final Team Shortlist Lockdown</h3>
+                    <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 space-y-6 md:col-span-1">
+                        <h3 className="text-sm font-bold tracking-widest text-neutral-300 uppercase border-b border-neutral-850 pb-3">Final Shortlist Lockdown</h3>
 
                         <div className="p-4 bg-neutral-950 border border-neutral-850 rounded-xl space-y-3">
                             <p className="text-[9px] font-black text-neutral-400 tracking-widest uppercase">System Lockdown Status</p>
                             <div className="flex items-center gap-3">
                                 <div className={`w-3.5 h-3.5 rounded-full ${eventState.shortlistCommitted ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`}></div>
                                 <span className="text-xs font-black uppercase tracking-wider text-neutral-200">
-                                    {eventState.shortlistCommitted ? 'Lockdown Status: Commited' : 'Standby / Configuration Idle'}
+                                    {eventState.shortlistCommitted ? 'Lockdown Status: Committed' : 'Standby / Configuration Idle'}
                                 </span>
                             </div>
                         </div>
 
                         <div className="space-y-3">
-                            <p className="text-[9px] font-black text-neutral-400 tracking-widest uppercase">Shortlist Team Selection</p>
-                            <div className="max-h-60 overflow-y-auto pr-1 border border-neutral-850 rounded-xl p-3 bg-neutral-950/40 space-y-2">
+                            <p className="text-[9px] font-black text-neutral-400 tracking-widest uppercase">Shortlisted Teams</p>
+                            <div className="max-h-48 overflow-y-auto pr-1 border border-neutral-850 rounded-xl p-3 bg-neutral-950/40 space-y-2">
                                 {teams.map(team => {
                                     const checked = shortlistedTeamsList.includes(team.id);
                                     return (
@@ -475,92 +792,83 @@ export default function YantraYugaConsole({
                 </div>
             )}
 
-            {/* TAB 3: Assignments */}
+            {/* TAB 4: Assignments */}
             {activeSubTab === 'assignments' && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {/* New assignments form */}
-                    <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 space-y-6 md:col-span-1 h-fit">
-                        <h3 className="text-sm font-bold tracking-widest text-neutral-300 uppercase border-b border-neutral-850 pb-3">Create Team Assignment</h3>
-
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-neutral-400 tracking-[0.2em] uppercase">Coordinator</label>
-                            <select
-                                value={selectedCoordinatorForAssignment}
-                                onChange={(e) => setSelectedCoordinatorForAssignment(e.target.value)}
-                                className="w-full bg-neutral-950 border border-neutral-850 rounded-xl p-3 text-xs font-semibold text-white focus:outline-none focus:border-violet-500 transition-all cursor-pointer"
-                            >
-                                <option value="">Select Coordinator...</option>
-                                {coordinators.map(c => (
-                                    <option key={c.id} value={c.id}>{c.name || c.email}</option>
-                                ))}
-                            </select>
+                <div className="grid grid-cols-1 gap-8">
+                    <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 space-y-6">
+                        <div className="flex items-center justify-between border-b border-neutral-850 pb-3">
+                            <h3 className="text-sm font-bold tracking-widest text-neutral-300 uppercase">Team Assignments & Physical Setup</h3>
+                            <p className="text-[10px] text-neutral-500 uppercase font-mono">Assign Tables & Coordinators</p>
                         </div>
-
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-neutral-400 tracking-[0.2em] uppercase">Select Teams</label>
-                            <div className="max-h-60 overflow-y-auto pr-1 border border-neutral-850 rounded-xl p-3 bg-neutral-950/40 space-y-2">
-                                {teams.map(team => {
-                                    const isChecked = selectedTeamsForAssignment.includes(team.id);
-                                    return (
-                                        <label key={team.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-neutral-900 transition-all cursor-pointer">
-                                            <span className="text-xs font-semibold text-neutral-300">{team.name}</span>
-                                            <input
-                                                type="checkbox"
-                                                checked={isChecked}
-                                                onChange={() => {
-                                                    setSelectedTeamsForAssignment(prev =>
-                                                        prev.includes(team.id) ? prev.filter(id => id !== team.id) : [...prev, team.id]
-                                                    );
-                                                }}
-                                                className="w-4 h-4 accent-violet-500 cursor-pointer bg-neutral-950 border-neutral-800"
-                                            />
-                                        </label>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        <Button
-                            onClick={handleAssignTeams}
-                            disabled={isSubmitting}
-                            className="w-full py-6 bg-violet-600 hover:bg-violet-750 text-white font-bold text-xs tracking-wider"
-                        >
-                            Assign Coordinator
-                        </Button>
-                    </div>
-
-                    {/* List of current assignments */}
-                    <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 space-y-6 md:col-span-2">
-                        <h3 className="text-sm font-bold tracking-widest text-neutral-300 uppercase border-b border-neutral-850 pb-3">Active Coordinator-Team Mappings</h3>
-                        <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
-                            {teams.filter(t => t.coordinatorId).length > 0 ? (
-                                teams.filter(t => t.coordinatorId).map(team => (
-                                    <div key={team.id} className="flex items-center justify-between p-4 bg-neutral-950 border border-neutral-850 rounded-xl">
-                                        <div>
-                                            <p className="font-bold text-neutral-200 text-xs">{team.name}</p>
-                                            <p className="text-[10px] text-violet-400 font-bold uppercase tracking-wider">Assigned to: {team.coordinator?.name || team.coordinator?.email}</p>
-                                        </div>
-                                        <button
-                                            onClick={() => handleUnassign(team.id, team.coordinatorId!)}
-                                            disabled={isSubmitting}
-                                            className="p-2.5 bg-red-500/10 hover:bg-red-500 hover:text-white rounded-lg transition-colors border border-red-500/20 text-red-500"
-                                            title="Unassign"
-                                        >
-                                            <LucideX className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="text-center py-12 border border-dashed border-neutral-800 rounded-xl">
-                                    <p className="text-xs font-bold tracking-widest text-neutral-500">NO COORDINATOR MAPPINGS ESTABLISHED</p>
-                                </div>
-                            )}
+                        
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs border-collapse">
+                                <thead>
+                                    <tr className="border-b border-neutral-800 text-[10px] font-black tracking-widest text-neutral-400 uppercase bg-neutral-950/40">
+                                        <th className="py-3 px-4">Team</th>
+                                        <th className="py-3 px-4">Table Number / Desk</th>
+                                        <th className="py-3 px-4">Assigned Coordinator</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-neutral-850 text-neutral-300">
+                                    {teams.map(team => (
+                                        <tr key={team.id} className="hover:bg-neutral-850/20 transition-colors">
+                                            <td className="py-4 px-4 font-semibold text-neutral-100">
+                                                {team.name}
+                                                <p className="text-[9px] text-neutral-500 font-mono mt-0.5">ID: {team.id}</p>
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <input
+                                                    type="text"
+                                                    value={team.tableNo || ''}
+                                                    onChange={(e) => handleTableNoChange(team.id, e.target.value)}
+                                                    placeholder="Assign Table (e.g. loo2-yy1)"
+                                                    className="bg-neutral-950 border border-neutral-850 rounded-lg py-1.5 px-3 text-xs text-white focus:outline-none focus:border-violet-500 w-48 font-semibold"
+                                                />
+                                            </td>
+                                            <td className="py-4 px-4">
+                                                <select
+                                                    value={team.coordinatorId || ''}
+                                                    onChange={(e) => {
+                                                        const coordId = e.target.value;
+                                                        if (coordId) {
+                                                            assignCoordinatorToTeam(eventId, coordId, [team.id])
+                                                                .then(() => {
+                                                                    const assignedCoord = coordinators.find(c => c.id === coordId) || null;
+                                                                    setTeams(prev => prev.map(t => t.id === team.id ? { ...t, coordinatorId: coordId, coordinator: assignedCoord } : t));
+                                                                })
+                                                                .catch(() => alert('Failed to assign coordinator'));
+                                                        } else {
+                                                            unassignCoordinatorFromTeam(eventId, team.id, team.coordinatorId!)
+                                                                .then(() => {
+                                                                    setTeams(prev => prev.map(t => t.id === team.id ? { ...t, coordinatorId: null, coordinator: null } : t));
+                                                                })
+                                                                .catch(() => alert('Failed to unassign coordinator'));
+                                                        }
+                                                    }}
+                                                    className="bg-neutral-950 border border-neutral-850 rounded-lg py-1.5 px-3 text-xs text-white focus:outline-none focus:border-violet-500 cursor-pointer font-semibold"
+                                                >
+                                                    <option value="">Unassigned</option>
+                                                    {coordinators.map(c => (
+                                                        <option key={c.id} value={c.id}>{c.name || c.email}</option>
+                                                    ))}
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {teams.length === 0 && (
+                                        <tr>
+                                            <td colSpan={3} className="text-center py-8 text-neutral-500 italic">No teams formed yet.</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* TAB 4: Mentor Groups */}
+            {/* TAB 5: Mentor Groups */}
             {activeSubTab === 'groups' && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {/* Create group form */}

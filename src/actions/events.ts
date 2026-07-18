@@ -38,6 +38,16 @@ export async function createEvent(formData: z.infer<typeof eventSchema>) {
     throw new Error("Slug already exists");
   }
 
+  // Enforce one event per organizer rule
+  if (user.role === "ORGANIZER") {
+    const existingOrganizerEvent = await prisma.event.findFirst({
+      where: { organizerId: user.id, deletedAt: null },
+    });
+    if (existingOrganizerEvent) {
+      throw new Error("Organizers can only manage one event. You already have an active event.");
+    }
+  }
+
   const event = await prisma.event.create({
     data: {
       ...validated,
@@ -81,6 +91,11 @@ export async function updateEvent(
     throw new Error("Database state updated by another session. Please reload and retry.");
   }
 
+  // Block editing if the event is already completed
+  if (new Date() > new Date(currentEvent.eventEnd)) {
+    throw new Error("Cannot edit event details after the event has completed.");
+  }
+
   const updatedEvent = await prisma.event.update({
     where: { id },
     data: {
@@ -97,6 +112,7 @@ export async function updateEvent(
   });
 
   revalidatePath("/dashboard/organizer");
+  revalidatePath(`/dashboard/organizer/events/${id}`);
   revalidatePath(`/dashboard/participant/events/${updatedEvent.slug}`);
   return updatedEvent;
 }
