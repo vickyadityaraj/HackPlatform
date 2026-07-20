@@ -138,7 +138,7 @@ export function UserManagementTable({ users, currentUserId }: UserManagementTabl
           <TableBody>
             {filteredUsers.length === 0 ? (
               <TableRow className="border-neutral-800 hover:bg-transparent">
-                <TableCell colSpan={5} className="py-12 text-center text-neutral-500">
+                <TableCell colSpan={6} className="py-12 text-center text-neutral-500">
                   <ShieldAlert className="w-10 h-10 mx-auto text-neutral-600 mb-2" />
                   <p className="text-sm">No matching users found</p>
                 </TableCell>
@@ -162,6 +162,7 @@ export function UserManagementTable({ users, currentUserId }: UserManagementTabl
                     >
                       <option value="SUPER_ADMIN">Admin</option>
                       <option value="ORGANIZER">Organizer</option>
+                      <option value="COORDINATOR">Coordinator</option>
                       <option value="JUDGE">Judge</option>
                       <option value="PARTICIPANT">Participant</option>
                     </select>

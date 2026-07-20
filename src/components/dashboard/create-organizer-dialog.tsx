@@ -292,12 +292,14 @@ export function CreateOrganizerDialog({ events }: CreateOrganizerDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="flex items-center gap-2 bg-violet-600 hover:bg-violet-750 text-neutral-100 font-semibold h-10 px-5 shadow-lg shadow-violet-500/20 transition-all duration-200">
-          <UserPlus className="w-4.5 h-4.5" />
-          Assign Organizer
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button className="flex items-center gap-2 bg-violet-600 hover:bg-violet-750 text-neutral-100 font-semibold h-10 px-5 shadow-lg shadow-violet-500/20 transition-all duration-200">
+            <UserPlus className="w-4.5 h-4.5" />
+            Assign Organizer
+          </Button>
+        }
+      />
       <DialogContent className="sm:max-w-[500px] bg-neutral-900 border-neutral-850 text-neutral-100 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold flex items-center gap-2">
